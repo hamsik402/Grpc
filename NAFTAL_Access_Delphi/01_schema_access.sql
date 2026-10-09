@@ -32,6 +32,9 @@ CREATE TABLE BON_DE_COMMANDE (
   Code_BC TEXT(30) NOT NULL,
   Date_BC DATETIME,
   Code_serv TEXT(30),
+  Annule YESNO,
+  Date_annul DATETIME,
+  Motif_annul TEXT(255),
   CONSTRAINT PK_BON_COMMANDE PRIMARY KEY (Code_BC)
 );
 
@@ -46,6 +49,9 @@ CREATE TABLE BON_DE_LIVRAISON (
   Code_Bliv TEXT(30) NOT NULL,
   Date_liv DATETIME,
   Code_fourn TEXT(30),
+  Annule YESNO,
+  Date_annul DATETIME,
+  Motif_annul TEXT(255),
   CONSTRAINT PK_BON_LIVRAISON PRIMARY KEY (Code_Bliv)
 );
 
@@ -61,6 +67,9 @@ CREATE TABLE BON_D_AFFECTATION (
   Code_Aff TEXT(30) NOT NULL,
   Date_Aff DATETIME,
   Code_serv TEXT(30),
+  Annule YESNO,
+  Date_annul DATETIME,
+  Motif_annul TEXT(255),
   CONSTRAINT PK_BON_AFFECTATION PRIMARY KEY (Code_Aff)
 );
 

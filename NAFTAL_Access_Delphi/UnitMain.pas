@@ -257,6 +257,7 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenConsult(ADOConnection1, bkLivraison);
+  LoadArticles;
 end;
 
 procedure TFrmMain.btnConsAffClick(Sender: TObject);
@@ -264,6 +265,7 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenConsult(ADOConnection1, bkAffectation);
+  LoadArticles;
 end;
 
 procedure TFrmMain.btnCommandeClick(Sender: TObject);
@@ -278,6 +280,7 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenConsult(ADOConnection1, bkCommande);
+  LoadArticles;
 end;
 
 procedure TFrmMain.btnStockClick(Sender: TObject);

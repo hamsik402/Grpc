@@ -1,0 +1,46 @@
+GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
+
+1. PRÉREQUIS
+- Windows
+- Microsoft Access (ou Microsoft Access Database Engine/ACE)
+- Delphi VCL avec les composants ADO (Data.Win.ADODB)
+
+2. CRÉER LA BASE ACCESS
+- Ouvrir Access > Base de données vide.
+- Nommer le fichier StockNaftal.accdb.
+- Placer StockNaftal.accdb dans le même dossier que l'exécutable Delphi.
+- Pour chaque instruction CREATE TABLE du fichier 01_schema_access.sql :
+  créer une requête en mode SQL, coller une seule instruction, puis exécuter.
+- Créer les relations listées à la fin du script dans Outils de base de données > Relations.
+- Pour éviter les erreurs de compatibilité, exécuter les CREATE TABLE un par un.
+
+3. OUVRIR LE PROJET DELPHI
+- Ouvrir StockNaftal.dpr dans Delphi.
+- Vérifier que UnitMain.pas et UnitMain.dfm sont dans le même dossier.
+- Compiler puis exécuter.
+- Si la connexion échoue, vérifier que le fournisseur ACE est installé et compatible avec
+  l'architecture 32/64 bits de Delphi.
+- Si votre installation ne prend pas en charge ACE 12.0, remplacer dans UnitMain.pas
+  Microsoft.ACE.OLEDB.12.0 par Microsoft.ACE.OLEDB.16.0.
+
+4. UTILISATION
+- Pour ajouter un article : saisir code, désignation et type puis cliquer Ajouter article.
+- Pour enregistrer une entrée : saisir le code article et une quantité positive puis Entrée stock.
+- Pour enregistrer une sortie : saisir le code article et une quantité positive puis Sortie stock.
+- Actualiser recharge la liste.
+- Bon de livraison (entrée de stock) : bouton « Bon de livraison ». Choisir le fournisseur,
+  ajouter les lignes (article, quantité, prix unitaire), puis Enregistrer le bon. Le stock de
+  chaque article est augmenté.
+- Bon d'affectation (sortie de stock) : bouton « Bon d'affectation ». Choisir le service,
+  ajouter les lignes (article, quantité), puis Enregistrer le bon. Le stock est diminué ;
+  l'enregistrement est refusé si le stock est insuffisant.
+- Le numéro du bon est généré (BL-AAAA-0001, AF-AAAA-0001). Un bon est enregistré en une seule
+  transaction : en cas d'erreur, rien n'est enregistré.
+- Les écrans Fournisseurs et Services n'existent pas encore : exécuter 02_donnees_test.sql
+  (une instruction à la fois, comme pour le schéma) pour avoir des fournisseurs et services d'essai.
+
+LIMITES DE CETTE VERSION
+C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
+mais les écrans de fournisseurs, services, bons de commande, consultation/impression des bons, journal d'audit, impression, comptes
+utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
+comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

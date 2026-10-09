@@ -1,0 +1,83 @@
+-- NAFTAL BOUIRA - Schéma de départ pour Microsoft Access
+-- Exécuter chaque instruction séparément dans une requête Access en mode SQL.
+
+CREATE TABLE ARTICLE (
+  Code_art TEXT(30) NOT NULL,
+  Designation TEXT(120) NOT NULL,
+  Type_art TEXT(60),
+  Qtt_stock LONG,
+  Seuil_alerte LONG,
+  CONSTRAINT PK_ARTICLE PRIMARY KEY (Code_art)
+);
+
+CREATE TABLE FOURNISSEUR (
+  Code_fourn TEXT(30) NOT NULL,
+  Nom TEXT(80) NOT NULL,
+  Prenom TEXT(80),
+  Adresse TEXT(255),
+  TEL_f TEXT(30),
+  Num_rc TEXT(60),
+  NIF TEXT(60),
+  CONSTRAINT PK_FOURNISSEUR PRIMARY KEY (Code_fourn)
+);
+
+CREATE TABLE SERVICE_NAFTAL (
+  Code_serv TEXT(30) NOT NULL,
+  Nom_serv TEXT(100) NOT NULL,
+  TEL TEXT(30),
+  CONSTRAINT PK_SERVICE PRIMARY KEY (Code_serv)
+);
+
+CREATE TABLE BON_DE_COMMANDE (
+  Code_BC TEXT(30) NOT NULL,
+  Date_BC DATETIME,
+  Code_serv TEXT(30),
+  CONSTRAINT PK_BON_COMMANDE PRIMARY KEY (Code_BC)
+);
+
+CREATE TABLE COMMANDER (
+  Code_art TEXT(30) NOT NULL,
+  Code_BC TEXT(30) NOT NULL,
+  Qtt_cm LONG,
+  CONSTRAINT PK_COMMANDER PRIMARY KEY (Code_art, Code_BC)
+);
+
+CREATE TABLE BON_DE_LIVRAISON (
+  Code_Bliv TEXT(30) NOT NULL,
+  Date_liv DATETIME,
+  Code_fourn TEXT(30),
+  CONSTRAINT PK_BON_LIVRAISON PRIMARY KEY (Code_Bliv)
+);
+
+CREATE TABLE CONTIENT_LIVRAISON (
+  Code_art TEXT(30) NOT NULL,
+  Code_Bliv TEXT(30) NOT NULL,
+  Qtt_liv LONG,
+  Prix CURRENCY,
+  CONSTRAINT PK_CONTIENT_LIVRAISON PRIMARY KEY (Code_art, Code_Bliv)
+);
+
+CREATE TABLE BON_D_AFFECTATION (
+  Code_Aff TEXT(30) NOT NULL,
+  Date_Aff DATETIME,
+  Code_serv TEXT(30),
+  CONSTRAINT PK_BON_AFFECTATION PRIMARY KEY (Code_Aff)
+);
+
+CREATE TABLE CONTIENT_AFFECTATION (
+  Code_art TEXT(30) NOT NULL,
+  Code_Aff TEXT(30) NOT NULL,
+  Qtt_aff LONG,
+  CONSTRAINT PK_CONTIENT_AFFECTATION PRIMARY KEY (Code_art, Code_Aff)
+);
+
+-- Relations : créez les relations via Outils de base de données > Relations dans Access.
+-- ARTICLE.Code_art -> COMMANDER.Code_art
+-- BON_DE_COMMANDE.Code_BC -> COMMANDER.Code_BC
+-- ARTICLE.Code_art -> CONTIENT_LIVRAISON.Code_art
+-- BON_DE_LIVRAISON.Code_Bliv -> CONTIENT_LIVRAISON.Code_Bliv
+-- FOURNISSEUR.Code_fourn -> BON_DE_LIVRAISON.Code_fourn
+-- ARTICLE.Code_art -> CONTIENT_AFFECTATION.Code_art
+-- BON_D_AFFECTATION.Code_Aff -> CONTIENT_AFFECTATION.Code_Aff
+-- SERVICE_NAFTAL.Code_serv -> BON_D_AFFECTATION.Code_serv
+-- SERVICE_NAFTAL.Code_serv -> BON_DE_COMMANDE.Code_serv

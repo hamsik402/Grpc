@@ -32,6 +32,19 @@ object FrmMain: TFrmMain
       Font.Style = [fsBold]
       ParentFont = False
     end
+    object lblAlert: TLabel
+      Left = 520
+      Top = 24
+      Width = 4
+      Height = 16
+      Caption = ''
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clRed
+      Font.Height = -13
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
   end
   object pnlActions: TPanel
     Left = 0
@@ -203,6 +216,15 @@ object FrmMain: TFrmMain
       Caption = 'Liste des commandes'
       TabOrder = 15
       OnClick = btnConsCmdClick
+    end
+    object btnStock: TButton
+      Left = 16
+      Top = 180
+      Width = 130
+      Height = 28
+      Caption = #201'tat du stock'
+      TabOrder = 16
+      OnClick = btnStockClick
     end
   end
   object grdArticles: TStringGrid

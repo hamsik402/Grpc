@@ -45,10 +45,14 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
   Sélectionner un bon dans la liste du haut pour voir ses lignes, puis « Imprimer le bon »
   (choix de l'imprimante ; une imprimante PDF permet d'obtenir un fichier). Un bon enregistré
   ne peut pas être modifié depuis l'application.
+- État du stock : bouton « État du stock ». Liste tous les articles avec un statut : « Sous le
+  seuil » (quantité <= seuil d'alerte, en orange), « Rupture » (quantité <= 0, en rouge) ou « OK ».
+  Recherche par code/désignation, case « alertes seulement », modification du seuil d'un article
+  et impression. L'écran principal affiche en rouge le nombre d'articles en alerte.
 - 02_donnees_test.sql (facultatif) : fournisseurs et services d'essai fictifs.
 
 LIMITES DE CETTE VERSION
 C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
-mais le rapprochement commande/livraison, l'annulation/correction des bons, journal d'audit, états de stock, comptes
+mais le rapprochement commande/livraison, l'annulation/correction des bons, journal d'audit, mouvements de stock par article, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

@@ -5,7 +5,8 @@ uses
   UnitMain in 'UnitMain.pas' {FrmMain},
   UnitBon in 'UnitBon.pas',
   UnitTiers in 'UnitTiers.pas',
-  UnitConsult in 'UnitConsult.pas';
+  UnitConsult in 'UnitConsult.pas',
+  UnitStock in 'UnitStock.pas';
 
 {$R *.res}
 

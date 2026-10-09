@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult, UnitStock;
 
 type
   TFrmMain = class(TForm)
@@ -24,6 +24,8 @@ type
     btnConsAff: TButton;
     btnCommande: TButton;
     btnConsCmd: TButton;
+    btnStock: TButton;
+    lblAlert: TLabel;
     edtCode: TEdit;
     edtDesignation: TEdit;
     edtType: TEdit;
@@ -48,6 +50,7 @@ type
     procedure btnConsAffClick(Sender: TObject);
     procedure btnCommandeClick(Sender: TObject);
     procedure btnConsCmdClick(Sender: TObject);
+    procedure btnStockClick(Sender: TObject);
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
@@ -98,7 +101,7 @@ end;
 
 procedure TFrmMain.LoadArticles;
 var
-  R: Integer;
+  R, Alerts, Qtt: Integer;
 begin
   if not ADOConnection1.Connected then Exit;
   ADOQuery1.Close;
@@ -106,7 +109,15 @@ begin
     'SELECT Code_art, Designation, Type_art, Qtt_stock, Seuil_alerte ' +
     'FROM ARTICLE ORDER BY Designation';
   ADOQuery1.Open;
-  grdArticles.RowCount := ADOQuery1.RecordCount + 1;
+  if ADOQuery1.RecordCount < 1 then
+  begin
+    grdArticles.RowCount := 2;
+    for R := 0 to grdArticles.ColCount - 1 do
+      grdArticles.Cells[R, 1] := '';
+  end
+  else
+    grdArticles.RowCount := ADOQuery1.RecordCount + 1;
+  Alerts := 0;
   R := 1;
   while not ADOQuery1.Eof do
   begin
@@ -115,9 +126,17 @@ begin
     grdArticles.Cells[2,R] := ADOQuery1.FieldByName('Type_art').AsString;
     grdArticles.Cells[3,R] := ADOQuery1.FieldByName('Qtt_stock').AsString;
     grdArticles.Cells[4,R] := ADOQuery1.FieldByName('Seuil_alerte').AsString;
+    Qtt := ADOQuery1.FieldByName('Qtt_stock').AsInteger;
+    if (Qtt <= 0) or (not ADOQuery1.FieldByName('Seuil_alerte').IsNull and
+       (Qtt <= ADOQuery1.FieldByName('Seuil_alerte').AsInteger)) then
+      Inc(Alerts);
     Inc(R);
     ADOQuery1.Next;
   end;
+  if Alerts > 0 then
+    lblAlert.Caption := Format('Alerte : %d article(s) sous le seuil ou en rupture', [Alerts])
+  else
+    lblAlert.Caption := '';
 end;
 
 function TFrmMain.ReadQty: Integer;
@@ -259,6 +278,14 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenConsult(ADOConnection1, bkCommande);
+end;
+
+procedure TFrmMain.btnStockClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenStock(ADOConnection1);
+  LoadArticles;
 end;
 
 end.

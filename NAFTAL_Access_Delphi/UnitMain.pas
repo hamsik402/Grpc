@@ -22,6 +22,8 @@ type
     btnServices: TButton;
     btnConsLiv: TButton;
     btnConsAff: TButton;
+    btnCommande: TButton;
+    btnConsCmd: TButton;
     edtCode: TEdit;
     edtDesignation: TEdit;
     edtType: TEdit;
@@ -44,6 +46,8 @@ type
     procedure btnServicesClick(Sender: TObject);
     procedure btnConsLivClick(Sender: TObject);
     procedure btnConsAffClick(Sender: TObject);
+    procedure btnCommandeClick(Sender: TObject);
+    procedure btnConsCmdClick(Sender: TObject);
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
@@ -241,6 +245,20 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenConsult(ADOConnection1, bkAffectation);
+end;
+
+procedure TFrmMain.btnCommandeClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenBon(ADOConnection1, bkCommande);
+end;
+
+procedure TFrmMain.btnConsCmdClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenConsult(ADOConnection1, bkCommande);
 end;
 
 end.

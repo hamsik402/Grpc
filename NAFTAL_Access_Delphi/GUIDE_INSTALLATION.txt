@@ -34,7 +34,10 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 - Bon d'affectation (sortie de stock) : bouton « Bon d'affectation ». Choisir le service,
   ajouter les lignes (article, quantité), puis Enregistrer le bon. Le stock est diminué ;
   l'enregistrement est refusé si le stock est insuffisant.
-- Le numéro du bon est généré (BL-AAAA-0001, AF-AAAA-0001). Un bon est enregistré en une seule
+- Bon de commande : bouton « Bon de commande ». Choisir le service demandeur et les articles
+  avec leurs quantités. Une commande n'a aucun effet sur le stock (la réception se fait par un
+  bon de livraison). « Liste des commandes » permet de la consulter et de l'imprimer.
+- Le numéro du bon est généré (BL-AAAA-0001, AF-AAAA-0001, BC-AAAA-0001). Un bon est enregistré en une seule
   transaction : en cas d'erreur, rien n'est enregistré.
 - Fournisseurs / Services : boutons du même nom. Cliquer une ligne pour la modifier, « Nouveau »
   pour un ajout, « Supprimer » (refusé si des bons utilisent l'enregistrement).
@@ -46,6 +49,6 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 
 LIMITES DE CETTE VERSION
 C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
-mais les bons de commande, l'annulation/correction des bons, journal d'audit, états de stock, comptes
+mais le rapprochement commande/livraison, l'annulation/correction des bons, journal d'audit, états de stock, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

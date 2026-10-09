@@ -37,7 +37,7 @@ object FrmMain: TFrmMain
     Left = 0
     Top = 64
     Width = 940
-    Height = 176
+    Height = 210
     Align = alTop
     TabOrder = 1
     object lblCode: TLabel
@@ -185,6 +185,24 @@ object FrmMain: TFrmMain
       Caption = 'Liste des affectations'
       TabOrder = 13
       OnClick = btnConsAffClick
+    end
+    object btnCommande: TButton
+      Left = 304
+      Top = 146
+      Width = 130
+      Height = 28
+      Caption = 'Bon de commande'
+      TabOrder = 14
+      OnClick = btnCommandeClick
+    end
+    object btnConsCmd: TButton
+      Left = 448
+      Top = 146
+      Width = 130
+      Height = 28
+      Caption = 'Liste des commandes'
+      TabOrder = 15
+      OnClick = btnConsCmdClick
     end
   end
   object grdArticles: TStringGrid

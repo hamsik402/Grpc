@@ -14,7 +14,7 @@ uses
   Data.DB, Data.Win.ADODB;
 
 type
-  TBonKind = (bkLivraison, bkAffectation);
+  TBonKind = (bkLivraison, bkAffectation, bkCommande);
 
   TFrmBon = class(TForm)
   private
@@ -66,6 +66,7 @@ type
 
     procedure ExecLivraison(const ACode: string);
     procedure ExecAffectation(const ACode: string);
+    procedure ExecCommande(const ACode: string);
   public
     constructor CreateBon(AOwner: TComponent; AConn: TADOConnection;
       AKind: TBonKind);
@@ -149,16 +150,20 @@ begin
   Position := poOwnerFormCenter;
   ClientWidth := 750;
   ClientHeight := 540;
-  if IsLiv then
-    Caption := 'Bon de livraison (entrée de stock)'
+  case FKind of
+    bkLivraison: Caption := 'Bon de livraison (entrée de stock)';
+    bkAffectation: Caption := 'Bon d''affectation (sortie de stock)';
   else
-    Caption := 'Bon d''affectation (sortie de stock)';
+    Caption := 'Bon de commande (aucun effet sur le stock)';
+  end;
 
   { En-tête du bon }
-  if IsLiv then
-    AddLabel('N° bon de livraison', 16, 14)
+  case FKind of
+    bkLivraison: AddLabel('N° bon de livraison', 16, 14);
+    bkAffectation: AddLabel('N° bon d''affectation', 16, 14);
   else
-    AddLabel('N° bon d''affectation', 16, 14);
+    AddLabel('N° bon de commande', 16, 14);
+  end;
   edtCode := AddEdit(16, 34, 150);
   edtCode.ReadOnly := True;
 
@@ -168,10 +173,12 @@ begin
   dtpDate.SetBounds(190, 34, 130, 21);
   dtpDate.Date := Date;
 
-  if IsLiv then
-    AddLabel('Fournisseur', 340, 14)
+  case FKind of
+    bkLivraison: AddLabel('Fournisseur', 340, 14);
+    bkAffectation: AddLabel('Service destinataire', 340, 14);
   else
-    AddLabel('Service destinataire', 340, 14);
+    AddLabel('Service demandeur', 340, 14);
+  end;
   cboTiers := TComboBox.Create(Self);
   cboTiers.Parent := Self;
   cboTiers.Style := csDropDownList;
@@ -305,17 +312,25 @@ var
   Prefix, Tbl, Fld, S: string;
   N, MaxN: Integer;
 begin
-  if FKind = bkLivraison then
-  begin
-    Prefix := 'BL-';
-    Tbl := 'BON_DE_LIVRAISON';
-    Fld := 'Code_Bliv';
-  end
+  case FKind of
+    bkLivraison:
+      begin
+        Prefix := 'BL-';
+        Tbl := 'BON_DE_LIVRAISON';
+        Fld := 'Code_Bliv';
+      end;
+    bkAffectation:
+      begin
+        Prefix := 'AF-';
+        Tbl := 'BON_D_AFFECTATION';
+        Fld := 'Code_Aff';
+      end;
   else
-  begin
-    Prefix := 'AF-';
-    Tbl := 'BON_D_AFFECTATION';
-    Fld := 'Code_Aff';
+    begin
+      Prefix := 'BC-';
+      Tbl := 'BON_DE_COMMANDE';
+      Fld := 'Code_BC';
+    end;
   end;
   Prefix := Prefix + IntToStr(YearOf(Date)) + '-';
 
@@ -568,6 +583,34 @@ begin
   end;
 end;
 
+{ Un bon de commande est une demande d'un service : il n'entre ni ne sort rien
+  du stock, il est seulement enregistré. }
+procedure TFrmBon.ExecCommande(const ACode: string);
+var
+  R: Integer;
+begin
+  FQry.Close;
+  FQry.SQL.Text :=
+    'INSERT INTO BON_DE_COMMANDE (Code_BC, Date_BC, Code_serv) ' +
+    'VALUES (:c, :d, :s)';
+  FQry.Parameters.ParamByName('c').Value := ACode;
+  FQry.Parameters.ParamByName('d').DataType := ftDateTime;
+  FQry.Parameters.ParamByName('d').Value := DateOf(dtpDate.Date);
+  FQry.Parameters.ParamByName('s').Value := FTiersCodes[cboTiers.ItemIndex];
+  FQry.ExecSQL;
+
+  for R := 1 to FLineCount do
+  begin
+    FQry.Close;
+    FQry.SQL.Text :=
+      'INSERT INTO COMMANDER (Code_art, Code_BC, Qtt_cm) VALUES (:a, :b, :q)';
+    FQry.Parameters.ParamByName('a').Value := grdLines.Cells[0, R];
+    FQry.Parameters.ParamByName('b').Value := ACode;
+    FQry.Parameters.ParamByName('q').Value := StrToInt(grdLines.Cells[2, R]);
+    FQry.ExecSQL;
+  end;
+end;
+
 procedure TFrmBon.SaveClick(Sender: TObject);
 var
   Code: string;
@@ -588,10 +631,12 @@ begin
 
   FConn.BeginTrans;
   try
-    if FKind = bkLivraison then
-      ExecLivraison(Code)
+    case FKind of
+      bkLivraison: ExecLivraison(Code);
+      bkAffectation: ExecAffectation(Code);
     else
-      ExecAffectation(Code);
+      ExecCommande(Code);
+    end;
     FConn.CommitTrans;
   except
     if FConn.InTransaction then
@@ -600,7 +645,10 @@ begin
     raise;
   end;
 
-  ShowMessage('Bon ' + Code + ' enregistré. Le stock a été mis à jour.');
+  if FKind = bkCommande then
+    ShowMessage('Bon ' + Code + ' enregistré. Le stock n''est pas modifié.')
+  else
+    ShowMessage('Bon ' + Code + ' enregistré. Le stock a été mis à jour.');
   LoadArticles;
   NewBon;
 end;

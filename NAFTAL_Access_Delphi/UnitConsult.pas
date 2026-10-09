@@ -95,10 +95,12 @@ begin
   Position := poOwnerFormCenter;
   ClientWidth := 750;
   ClientHeight := 580;
-  if IsLiv then
-    Caption := 'Consultation des bons de livraison'
+  case FKind of
+    bkLivraison: Caption := 'Consultation des bons de livraison';
+    bkAffectation: Caption := 'Consultation des bons d''affectation';
   else
-    Caption := 'Consultation des bons d''affectation';
+    Caption := 'Consultation des bons de commande';
+  end;
 
   L := TLabel.Create(Self);
   L.Parent := Self;
@@ -191,6 +193,12 @@ begin
       'FROM BON_DE_LIVRAISON AS b LEFT JOIN FOURNISSEUR AS f ' +
       'ON b.Code_fourn = f.Code_fourn ' +
       'ORDER BY b.Date_liv DESC, b.Code_Bliv DESC'
+  else if FKind = bkCommande then
+    FQry.SQL.Text :=
+      'SELECT b.Code_BC AS Code, b.Date_BC AS Dt, s.Nom_serv AS Tiers ' +
+      'FROM BON_DE_COMMANDE AS b LEFT JOIN SERVICE_NAFTAL AS s ' +
+      'ON b.Code_serv = s.Code_serv ' +
+      'ORDER BY b.Date_BC DESC, b.Code_BC DESC'
   else
     FQry.SQL.Text :=
       'SELECT b.Code_Aff AS Code, b.Date_Aff AS Dt, s.Nom_serv AS Tiers ' +
@@ -255,6 +263,11 @@ begin
         'SELECT c.Code_art, a.Designation, c.Qtt_liv AS Qtt, c.Prix ' +
         'FROM CONTIENT_LIVRAISON AS c LEFT JOIN ARTICLE AS a ' +
         'ON c.Code_art = a.Code_art WHERE c.Code_Bliv = :b ORDER BY c.Code_art'
+    else if FKind = bkCommande then
+      FQry.SQL.Text :=
+        'SELECT c.Code_art, a.Designation, c.Qtt_cm AS Qtt ' +
+        'FROM COMMANDER AS c LEFT JOIN ARTICLE AS a ' +
+        'ON c.Code_art = a.Code_art WHERE c.Code_BC = :b ORDER BY c.Code_art'
     else
       FQry.SQL.Text :=
         'SELECT c.Code_art, a.Designation, c.Qtt_aff AS Qtt ' +
@@ -434,6 +447,11 @@ begin
       Title := 'BON DE LIVRAISON N° ' + FHeadCode;
       TiersLabel := 'Fournisseur : ';
     end
+    else if FKind = bkCommande then
+    begin
+      Title := 'BON DE COMMANDE N° ' + FHeadCode;
+      TiersLabel := 'Service demandeur : ';
+    end
     else
     begin
       Title := 'BON D''AFFECTATION N° ' + FHeadCode;
@@ -481,9 +499,15 @@ begin
       Printer.NewPage;
       Y := Margin;
     end;
-    Cv.TextOut(Margin, Y, 'Le magasinier');
+    if FKind = bkCommande then
+      Cv.TextOut(Margin, Y, 'Le demandeur')
+    else
+      Cv.TextOut(Margin, Y, 'Le magasinier');
     if IsLiv then
       Cv.TextOut(PageW - Margin - Cv.TextWidth('Le fournisseur'), Y, 'Le fournisseur')
+    else if FKind = bkCommande then
+      Cv.TextOut(PageW - Margin - Cv.TextWidth('Le responsable approvisionnement'), Y,
+        'Le responsable approvisionnement')
     else
       Cv.TextOut(PageW - Margin - Cv.TextWidth('Le responsable du service'), Y,
         'Le responsable du service');

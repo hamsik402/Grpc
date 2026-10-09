@@ -150,6 +150,24 @@ object FrmMain: TFrmMain
       TabOrder = 9
       OnClick = btnAffectationClick
     end
+    object btnFournisseurs: TButton
+      Left = 304
+      Top = 112
+      Width = 130
+      Height = 28
+      Caption = 'Fournisseurs'
+      TabOrder = 10
+      OnClick = btnFournisseursClick
+    end
+    object btnServices: TButton
+      Left = 448
+      Top = 112
+      Width = 130
+      Height = 28
+      Caption = 'Services'
+      TabOrder = 11
+      OnClick = btnServicesClick
+    end
   end
   object grdArticles: TStringGrid
     Left = 0

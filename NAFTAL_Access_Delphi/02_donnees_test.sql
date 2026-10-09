@@ -1,7 +1,7 @@
 -- DONNÉES D'ESSAI (fictives, pas des données réelles NAFTAL).
 -- À exécuter une instruction à la fois dans Access (Mode SQL), après 01_schema_access.sql.
--- Les écrans Fournisseurs / Services ne sont pas encore développés :
--- ces lignes servent à pouvoir tester les bons de livraison et d'affectation.
+-- Les écrans Fournisseurs et Services permettent aussi de les saisir ;
+-- ces lignes servent à tester rapidement les bons.
 
 INSERT INTO FOURNISSEUR (Code_fourn, Nom, Prenom, Adresse, TEL_f) VALUES ('F001', 'Fournisseur Test 1', '', 'Bouira', '0000000001');
 

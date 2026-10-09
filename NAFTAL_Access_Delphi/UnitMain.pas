@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers;
 
 type
   TFrmMain = class(TForm)
@@ -18,6 +18,8 @@ type
     btnExit: TButton;
     btnLivraison: TButton;
     btnAffectation: TButton;
+    btnFournisseurs: TButton;
+    btnServices: TButton;
     edtCode: TEdit;
     edtDesignation: TEdit;
     edtType: TEdit;
@@ -36,6 +38,8 @@ type
     procedure btnExitClick(Sender: TObject);
     procedure btnLivraisonClick(Sender: TObject);
     procedure btnAffectationClick(Sender: TObject);
+    procedure btnFournisseursClick(Sender: TObject);
+    procedure btnServicesClick(Sender: TObject);
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
@@ -205,6 +209,20 @@ begin
     raise Exception.Create('Base de données non connectée.');
   OpenBon(ADOConnection1, bkAffectation);
   LoadArticles;
+end;
+
+procedure TFrmMain.btnFournisseursClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenTiers(ADOConnection1, tkFournisseur);
+end;
+
+procedure TFrmMain.btnServicesClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenTiers(ADOConnection1, tkService);
 end;
 
 end.

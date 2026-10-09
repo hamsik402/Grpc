@@ -3,7 +3,8 @@
 uses
   Vcl.Forms,
   UnitMain in 'UnitMain.pas' {FrmMain},
-  UnitBon in 'UnitBon.pas';
+  UnitBon in 'UnitBon.pas',
+  UnitTiers in 'UnitTiers.pas';
 
 {$R *.res}
 

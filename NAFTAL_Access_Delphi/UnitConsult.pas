@@ -1,0 +1,498 @@
+﻿unit UnitConsult;
+
+{ Consultation et impression des bons de livraison et d'affectation déjà
+  enregistrés. Liste des bons en haut, lignes du bon sélectionné en bas.
+  L'impression passe par TPrinter (aucun composant d'état supplémentaire). }
+
+interface
+
+uses
+  Winapi.Windows, System.SysUtils, System.Classes, System.Math,
+  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.Grids, Vcl.Dialogs, Vcl.Printers,
+  Vcl.Graphics, Data.DB, Data.Win.ADODB, UnitBon;
+
+type
+  TFrmConsult = class(TForm)
+  private
+    FConn: TADOConnection;
+    FKind: TBonKind;
+    FQry: TADOQuery;
+    FBonCount: Integer;
+    FLineCount: Integer;
+    FAmount: Currency;
+    FHeadCode, FHeadDate, FHeadTiers: string;
+    grdBons: TStringGrid;
+    grdLines: TStringGrid;
+    lblTotal: TLabel;
+    lblEmpty: TLabel;
+
+    function AddButton(const ACaption: string; ALeft, ATop, AWidth: Integer;
+      AHandler: TNotifyEvent): TButton;
+    procedure BuildUI;
+    procedure LoadBons;
+    procedure LoadLines(ARow: Integer);
+    function TotalQty: Integer;
+    function TotalAmount: Currency;
+    function FmtDate(AField: TField): string;
+
+    procedure GridSelectCell(Sender: TObject; ACol, ARow: Integer;
+      var CanSelect: Boolean);
+    procedure PrintClick(Sender: TObject);
+    procedure CloseClick(Sender: TObject);
+    procedure PrintBon;
+  public
+    constructor CreateConsult(AOwner: TComponent; AConn: TADOConnection;
+      AKind: TBonKind);
+  end;
+
+procedure OpenConsult(AConn: TADOConnection; AKind: TBonKind);
+
+implementation
+
+procedure OpenConsult(AConn: TADOConnection; AKind: TBonKind);
+var
+  F: TFrmConsult;
+begin
+  F := TFrmConsult.CreateConsult(Application, AConn, AKind);
+  try
+    F.ShowModal;
+  finally
+    F.Free;
+  end;
+end;
+
+{ TFrmConsult }
+
+constructor TFrmConsult.CreateConsult(AOwner: TComponent;
+  AConn: TADOConnection; AKind: TBonKind);
+begin
+  inherited CreateNew(AOwner);
+  FConn := AConn;
+  FKind := AKind;
+  FQry := TADOQuery.Create(Self);
+  FQry.Connection := FConn;
+  BuildUI;
+  LoadBons;
+end;
+
+function TFrmConsult.AddButton(const ACaption: string; ALeft, ATop,
+  AWidth: Integer; AHandler: TNotifyEvent): TButton;
+begin
+  Result := TButton.Create(Self);
+  Result.Parent := Self;
+  Result.SetBounds(ALeft, ATop, AWidth, 28);
+  Result.Caption := ACaption;
+  Result.OnClick := AHandler;
+end;
+
+procedure TFrmConsult.BuildUI;
+var
+  L: TLabel;
+  IsLiv: Boolean;
+begin
+  IsLiv := FKind = bkLivraison;
+  BorderStyle := bsDialog;
+  Position := poOwnerFormCenter;
+  ClientWidth := 750;
+  ClientHeight := 580;
+  if IsLiv then
+    Caption := 'Consultation des bons de livraison'
+  else
+    Caption := 'Consultation des bons d''affectation';
+
+  L := TLabel.Create(Self);
+  L.Parent := Self;
+  L.SetBounds(16, 10, 300, 13);
+  L.Caption := 'Bons enregistrés (du plus récent au plus ancien)';
+
+  grdBons := TStringGrid.Create(Self);
+  grdBons.Parent := Self;
+  grdBons.SetBounds(16, 28, 718, 200);
+  grdBons.FixedCols := 0;
+  grdBons.FixedRows := 1;
+  grdBons.RowCount := 2;
+  grdBons.ColCount := 3;
+  grdBons.ColWidths[0] := 150;
+  grdBons.ColWidths[1] := 110;
+  grdBons.ColWidths[2] := 440;
+  grdBons.Options := grdBons.Options + [goRowSelect] - [goEditing];
+  grdBons.Cells[0, 0] := 'N° du bon';
+  grdBons.Cells[1, 0] := 'Date';
+  if IsLiv then
+    grdBons.Cells[2, 0] := 'Fournisseur'
+  else
+    grdBons.Cells[2, 0] := 'Service';
+  grdBons.OnSelectCell := GridSelectCell;
+
+  lblEmpty := TLabel.Create(Self);
+  lblEmpty.Parent := Self;
+  lblEmpty.SetBounds(16, 232, 500, 13);
+  lblEmpty.Caption := '';
+
+  L := TLabel.Create(Self);
+  L.Parent := Self;
+  L.SetBounds(16, 252, 300, 13);
+  L.Caption := 'Lignes du bon sélectionné';
+
+  grdLines := TStringGrid.Create(Self);
+  grdLines.Parent := Self;
+  grdLines.SetBounds(16, 270, 718, 230);
+  grdLines.FixedCols := 0;
+  grdLines.FixedRows := 1;
+  grdLines.RowCount := 2;
+  grdLines.Options := grdLines.Options - [goEditing];
+  if IsLiv then
+  begin
+    grdLines.ColCount := 5;
+    grdLines.ColWidths[0] := 100;
+    grdLines.ColWidths[1] := 295;
+    grdLines.ColWidths[2] := 70;
+    grdLines.ColWidths[3] := 110;
+    grdLines.ColWidths[4] := 125;
+    grdLines.Cells[3, 0] := 'Prix unitaire';
+    grdLines.Cells[4, 0] := 'Montant';
+  end
+  else
+  begin
+    grdLines.ColCount := 3;
+    grdLines.ColWidths[0] := 120;
+    grdLines.ColWidths[1] := 480;
+    grdLines.ColWidths[2] := 90;
+  end;
+  grdLines.Cells[0, 0] := 'Code';
+  grdLines.Cells[1, 0] := 'Désignation';
+  grdLines.Cells[2, 0] := 'Quantité';
+
+  lblTotal := TLabel.Create(Self);
+  lblTotal.Parent := Self;
+  lblTotal.SetBounds(16, 510, 600, 13);
+  lblTotal.Caption := '';
+
+  AddButton('Imprimer le bon', 480, 540, 140, PrintClick);
+  AddButton('Fermer', 634, 540, 100, CloseClick);
+end;
+
+function TFrmConsult.FmtDate(AField: TField): string;
+begin
+  if AField.IsNull then
+    Result := ''
+  else
+    Result := FormatDateTime('dd/mm/yyyy', AField.AsDateTime);
+end;
+
+procedure TFrmConsult.LoadBons;
+var
+  R: Integer;
+begin
+  FQry.Close;
+  if FKind = bkLivraison then
+    FQry.SQL.Text :=
+      'SELECT b.Code_Bliv AS Code, b.Date_liv AS Dt, f.Nom AS Tiers ' +
+      'FROM BON_DE_LIVRAISON AS b LEFT JOIN FOURNISSEUR AS f ' +
+      'ON b.Code_fourn = f.Code_fourn ' +
+      'ORDER BY b.Date_liv DESC, b.Code_Bliv DESC'
+  else
+    FQry.SQL.Text :=
+      'SELECT b.Code_Aff AS Code, b.Date_Aff AS Dt, s.Nom_serv AS Tiers ' +
+      'FROM BON_D_AFFECTATION AS b LEFT JOIN SERVICE_NAFTAL AS s ' +
+      'ON b.Code_serv = s.Code_serv ' +
+      'ORDER BY b.Date_Aff DESC, b.Code_Aff DESC';
+  FQry.Open;
+  R := 0;
+  while not FQry.Eof do
+  begin
+    Inc(R);
+    if grdBons.RowCount < R + 1 then
+      grdBons.RowCount := R + 1;
+    grdBons.Cells[0, R] := FQry.FieldByName('Code').AsString;
+    grdBons.Cells[1, R] := FmtDate(FQry.FieldByName('Dt'));
+    grdBons.Cells[2, R] := FQry.FieldByName('Tiers').AsString;
+    FQry.Next;
+  end;
+  FQry.Close;
+  FBonCount := R;
+  if FBonCount = 0 then
+  begin
+    grdBons.RowCount := 2;
+    lblEmpty.Caption := 'Aucun bon enregistré.';
+    LoadLines(0);
+  end
+  else
+  begin
+    grdBons.RowCount := FBonCount + 1;
+    lblEmpty.Caption := Format('%d bon(s).', [FBonCount]);
+    grdBons.Row := 1;
+    LoadLines(1);
+  end;
+end;
+
+procedure TFrmConsult.LoadLines(ARow: Integer);
+var
+  R, C: Integer;
+  Q: Integer;
+  P: Currency;
+begin
+  { vider l'ancien contenu }
+  for R := 1 to grdLines.RowCount - 1 do
+    for C := 0 to grdLines.ColCount - 1 do
+      grdLines.Cells[C, R] := '';
+  grdLines.RowCount := 2;
+  FLineCount := 0;
+  FAmount := 0;
+  FHeadCode := '';
+  FHeadDate := '';
+  FHeadTiers := '';
+
+  if (ARow >= 1) and (ARow <= FBonCount) then
+  begin
+    FHeadCode := grdBons.Cells[0, ARow];
+    FHeadDate := grdBons.Cells[1, ARow];
+    FHeadTiers := grdBons.Cells[2, ARow];
+
+    FQry.Close;
+    if FKind = bkLivraison then
+      FQry.SQL.Text :=
+        'SELECT c.Code_art, a.Designation, c.Qtt_liv AS Qtt, c.Prix ' +
+        'FROM CONTIENT_LIVRAISON AS c LEFT JOIN ARTICLE AS a ' +
+        'ON c.Code_art = a.Code_art WHERE c.Code_Bliv = :b ORDER BY c.Code_art'
+    else
+      FQry.SQL.Text :=
+        'SELECT c.Code_art, a.Designation, c.Qtt_aff AS Qtt ' +
+        'FROM CONTIENT_AFFECTATION AS c LEFT JOIN ARTICLE AS a ' +
+        'ON c.Code_art = a.Code_art WHERE c.Code_Aff = :b ORDER BY c.Code_art';
+    FQry.Parameters.ParamByName('b').Value := FHeadCode;
+    FQry.Open;
+    R := 0;
+    while not FQry.Eof do
+    begin
+      Inc(R);
+      if grdLines.RowCount < R + 1 then
+        grdLines.RowCount := R + 1;
+      Q := FQry.FieldByName('Qtt').AsInteger;
+      grdLines.Cells[0, R] := FQry.FieldByName('Code_art').AsString;
+      grdLines.Cells[1, R] := FQry.FieldByName('Designation').AsString;
+      grdLines.Cells[2, R] := IntToStr(Q);
+      if FKind = bkLivraison then
+      begin
+        P := FQry.FieldByName('Prix').AsCurrency;
+        grdLines.Cells[3, R] := CurrToStrF(P, ffNumber, 2);
+        grdLines.Cells[4, R] := CurrToStrF(Q * P, ffNumber, 2);
+        FAmount := FAmount + Q * P;
+      end;
+      FQry.Next;
+    end;
+    FQry.Close;
+    FLineCount := R;
+    if FLineCount > 0 then
+      grdLines.RowCount := FLineCount + 1;
+  end;
+
+  if FKind = bkLivraison then
+    lblTotal.Caption := Format('Lignes : %d   Quantité totale : %d   Montant total : %s',
+      [FLineCount, TotalQty, CurrToStrF(TotalAmount, ffNumber, 2)])
+  else
+    lblTotal.Caption := Format('Lignes : %d   Quantité totale : %d',
+      [FLineCount, TotalQty]);
+end;
+
+function TFrmConsult.TotalQty: Integer;
+var
+  R: Integer;
+begin
+  Result := 0;
+  for R := 1 to FLineCount do
+    Inc(Result, StrToIntDef(grdLines.Cells[2, R], 0));
+end;
+
+function TFrmConsult.TotalAmount: Currency;
+begin
+  Result := FAmount;
+end;
+
+procedure TFrmConsult.GridSelectCell(Sender: TObject; ACol, ARow: Integer;
+  var CanSelect: Boolean);
+begin
+  LoadLines(ARow);
+end;
+
+procedure TFrmConsult.CloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TFrmConsult.PrintClick(Sender: TObject);
+begin
+  if FHeadCode = '' then
+    raise Exception.Create('Sélectionnez un bon à imprimer.');
+  if Printer.Printers.Count = 0 then
+    raise Exception.Create('Aucune imprimante n''est installée.');
+  with TPrintDialog.Create(Self) do
+  try
+    if not Execute then
+      Exit;
+  finally
+    Free;
+  end;
+  PrintBon;
+end;
+
+procedure TFrmConsult.PrintBon;
+var
+  Cv: TCanvas;
+  Margin, Y, LineH, PageW, R, I: Integer;
+  ColX: array of Integer;     { bord gauche de chaque colonne }
+  ColW: array of Integer;
+  ColRight: array of Boolean; { colonne alignée à droite }
+  Heads: array of string;
+  IsLiv: Boolean;
+  Title, TiersLabel: string;
+
+  function Clip(const S: string; AWidth: Integer): string;
+  begin
+    Result := S;
+    while (Result <> '') and (Cv.TextWidth(Result) > AWidth) do
+      Delete(Result, Length(Result), 1);
+  end;
+
+  procedure Cell(ACol: Integer; const S: string);
+  var
+    T: string;
+  begin
+    T := Clip(S, ColW[ACol] - 8);
+    if ColRight[ACol] then
+      Cv.TextOut(ColX[ACol] + ColW[ACol] - 4 - Cv.TextWidth(T), Y, T)
+    else
+      Cv.TextOut(ColX[ACol] + 4, Y, T);
+  end;
+
+  procedure TableHeader;
+  var
+    K: Integer;
+  begin
+    Cv.Font.Style := [fsBold];
+    Cv.Pen.Width := 1;
+    Cv.MoveTo(Margin, Y);
+    Cv.LineTo(PageW - Margin, Y);
+    for K := 0 to High(Heads) do
+      Cell(K, Heads[K]);
+    Inc(Y, LineH);
+    Cv.MoveTo(Margin, Y);
+    Cv.LineTo(PageW - Margin, Y);
+    Cv.Font.Style := [];
+    Inc(Y, 4);
+  end;
+
+begin
+  IsLiv := FKind = bkLivraison;
+  Cv := Printer.Canvas;
+  Printer.Title := 'Bon ' + FHeadCode;
+  Printer.BeginDoc;
+  try
+    Cv.Font.Name := 'Arial';
+    Cv.Font.Size := 10;
+    Margin := Printer.PageWidth div 14;
+    PageW := Printer.PageWidth;
+    LineH := Cv.TextHeight('Ag') * 3 div 2;
+    Y := Margin;
+
+    { colonnes : 5 pour une livraison, 3 pour une affectation }
+    if IsLiv then
+    begin
+      SetLength(ColX, 5); SetLength(ColW, 5);
+      SetLength(ColRight, 5); SetLength(Heads, 5);
+      Heads[0] := 'Code'; Heads[1] := 'Désignation'; Heads[2] := 'Qté';
+      Heads[3] := 'Prix unitaire'; Heads[4] := 'Montant';
+      ColW[0] := (PageW - 2 * Margin) * 14 div 100;
+      ColW[1] := (PageW - 2 * Margin) * 38 div 100;
+      ColW[2] := (PageW - 2 * Margin) * 12 div 100;
+      ColW[3] := (PageW - 2 * Margin) * 16 div 100;
+      ColW[4] := (PageW - 2 * Margin) - ColW[0] - ColW[1] - ColW[2] - ColW[3];
+      ColRight[0] := False; ColRight[1] := False; ColRight[2] := True;
+      ColRight[3] := True; ColRight[4] := True;
+    end
+    else
+    begin
+      SetLength(ColX, 3); SetLength(ColW, 3);
+      SetLength(ColRight, 3); SetLength(Heads, 3);
+      Heads[0] := 'Code'; Heads[1] := 'Désignation'; Heads[2] := 'Qté';
+      ColW[0] := (PageW - 2 * Margin) * 18 div 100;
+      ColW[1] := (PageW - 2 * Margin) * 66 div 100;
+      ColW[2] := (PageW - 2 * Margin) - ColW[0] - ColW[1];
+      ColRight[0] := False; ColRight[1] := False; ColRight[2] := True;
+    end;
+    ColX[0] := Margin;
+    for I := 1 to High(ColX) do
+      ColX[I] := ColX[I - 1] + ColW[I - 1];
+
+    { en-tête du document }
+    Cv.Font.Style := [fsBold];
+    Cv.Font.Size := 12;
+    Cv.TextOut(Margin, Y, 'NAFTAL - District de Bouira');
+    Inc(Y, LineH * 2);
+    if IsLiv then
+    begin
+      Title := 'BON DE LIVRAISON N° ' + FHeadCode;
+      TiersLabel := 'Fournisseur : ';
+    end
+    else
+    begin
+      Title := 'BON D''AFFECTATION N° ' + FHeadCode;
+      TiersLabel := 'Service : ';
+    end;
+    Cv.Font.Size := 14;
+    Cv.TextOut(Margin, Y, Title);
+    Inc(Y, LineH * 2);
+    Cv.Font.Size := 10;
+    Cv.Font.Style := [];
+    Cv.TextOut(Margin, Y, 'Date : ' + FHeadDate);
+    Inc(Y, LineH);
+    Cv.TextOut(Margin, Y, TiersLabel + FHeadTiers);
+    Inc(Y, LineH * 2);
+
+    TableHeader;
+    for R := 1 to FLineCount do
+    begin
+      if Y + LineH * 6 > Printer.PageHeight - Margin then
+      begin
+        Printer.NewPage;
+        Y := Margin;
+        TableHeader;
+      end;
+      for I := 0 to High(Heads) do
+        Cell(I, grdLines.Cells[I, R]);
+      Inc(Y, LineH);
+    end;
+
+    { totaux et signatures }
+    Cv.MoveTo(Margin, Y);
+    Cv.LineTo(PageW - Margin, Y);
+    Inc(Y, LineH div 2);
+    Cv.Font.Style := [fsBold];
+    Cv.TextOut(Margin, Y, Format('Quantité totale : %d', [TotalQty]));
+    if IsLiv then
+    begin
+      Inc(Y, LineH);
+      Cv.TextOut(Margin, Y, 'Montant total : ' + CurrToStrF(TotalAmount, ffNumber, 2));
+    end;
+    Cv.Font.Style := [];
+    Inc(Y, LineH * 3);
+    if Y + LineH * 5 > Printer.PageHeight - Margin then
+    begin
+      Printer.NewPage;
+      Y := Margin;
+    end;
+    Cv.TextOut(Margin, Y, 'Le magasinier');
+    if IsLiv then
+      Cv.TextOut(PageW - Margin - Cv.TextWidth('Le fournisseur'), Y, 'Le fournisseur')
+    else
+      Cv.TextOut(PageW - Margin - Cv.TextWidth('Le responsable du service'), Y,
+        'Le responsable du service');
+
+    Printer.EndDoc;
+  except
+    Printer.Abort;
+    raise;
+  end;
+end;
+
+end.

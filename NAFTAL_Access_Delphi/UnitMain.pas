@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult;
 
 type
   TFrmMain = class(TForm)
@@ -20,6 +20,8 @@ type
     btnAffectation: TButton;
     btnFournisseurs: TButton;
     btnServices: TButton;
+    btnConsLiv: TButton;
+    btnConsAff: TButton;
     edtCode: TEdit;
     edtDesignation: TEdit;
     edtType: TEdit;
@@ -40,6 +42,8 @@ type
     procedure btnAffectationClick(Sender: TObject);
     procedure btnFournisseursClick(Sender: TObject);
     procedure btnServicesClick(Sender: TObject);
+    procedure btnConsLivClick(Sender: TObject);
+    procedure btnConsAffClick(Sender: TObject);
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
@@ -223,6 +227,20 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenTiers(ADOConnection1, tkService);
+end;
+
+procedure TFrmMain.btnConsLivClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenConsult(ADOConnection1, bkLivraison);
+end;
+
+procedure TFrmMain.btnConsAffClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenConsult(ADOConnection1, bkAffectation);
 end;
 
 end.

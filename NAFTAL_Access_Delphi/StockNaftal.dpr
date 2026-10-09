@@ -4,7 +4,8 @@ uses
   Vcl.Forms,
   UnitMain in 'UnitMain.pas' {FrmMain},
   UnitBon in 'UnitBon.pas',
-  UnitTiers in 'UnitTiers.pas';
+  UnitTiers in 'UnitTiers.pas',
+  UnitConsult in 'UnitConsult.pas';
 
 {$R *.res}
 

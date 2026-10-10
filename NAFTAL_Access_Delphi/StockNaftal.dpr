@@ -7,7 +7,8 @@ uses
   UnitTiers in 'UnitTiers.pas',
   UnitConsult in 'UnitConsult.pas',
   UnitStock in 'UnitStock.pas',
-  UnitMouv in 'UnitMouv.pas';
+  UnitMouv in 'UnitMouv.pas',
+  UnitRappro in 'UnitRappro.pas';
 
 {$R *.res}
 

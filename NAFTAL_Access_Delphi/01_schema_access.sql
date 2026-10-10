@@ -49,6 +49,7 @@ CREATE TABLE BON_DE_LIVRAISON (
   Code_Bliv TEXT(30) NOT NULL,
   Date_liv DATETIME,
   Code_fourn TEXT(30),
+  Code_BC TEXT(30),
   Annule YESNO,
   Date_annul DATETIME,
   Motif_annul TEXT(255),
@@ -86,6 +87,7 @@ CREATE TABLE CONTIENT_AFFECTATION (
 -- ARTICLE.Code_art -> CONTIENT_LIVRAISON.Code_art
 -- BON_DE_LIVRAISON.Code_Bliv -> CONTIENT_LIVRAISON.Code_Bliv
 -- FOURNISSEUR.Code_fourn -> BON_DE_LIVRAISON.Code_fourn
+-- BON_DE_COMMANDE.Code_BC -> BON_DE_LIVRAISON.Code_BC (facultative : livraison rattachée à une commande)
 -- ARTICLE.Code_art -> CONTIENT_AFFECTATION.Code_art
 -- BON_D_AFFECTATION.Code_Aff -> CONTIENT_AFFECTATION.Code_Aff
 -- SERVICE_NAFTAL.Code_serv -> BON_D_AFFECTATION.Code_serv

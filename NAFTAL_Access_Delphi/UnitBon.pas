@@ -9,7 +9,7 @@
 interface
 
 uses
-  Winapi.Windows, System.SysUtils, System.Classes, System.DateUtils,
+  Winapi.Windows, System.SysUtils, System.Classes, System.DateUtils, System.Variants,
   Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.Grids, Vcl.Dialogs,
   Data.DB, Data.Win.ADODB;
 
@@ -22,6 +22,7 @@ type
     FKind: TBonKind;
     FQry: TADOQuery;
     FTiersCodes: TStringList;
+    FCmdCodes: TStringList;   { commandes proposées ; '' = aucune }
     FArtCodes: TStringList;
     FArtStock: array of Integer;
     FLineCount: Integer;
@@ -30,6 +31,7 @@ type
     dtpDate: TDateTimePicker;
     cboTiers: TComboBox;
     cboArticle: TComboBox;
+    cboCmd: TComboBox;        { livraison seulement : commande liée }
     edtQty: TEdit;
     edtPrix: TEdit;
     lblStock: TLabel;
@@ -47,6 +49,7 @@ type
     procedure BuildUI;
 
     procedure LoadTiers;
+    procedure LoadCommandes;
     procedure LoadArticles;
     function NextCode: string;
     procedure NewBon;
@@ -98,6 +101,7 @@ begin
   FConn := AConn;
   FKind := AKind;
   FTiersCodes := TStringList.Create;
+  FCmdCodes := TStringList.Create;
   FArtCodes := TStringList.Create;
   FQry := TADOQuery.Create(Self);
   FQry.Connection := FConn;
@@ -105,12 +109,15 @@ begin
   OnShow := FormShowHandler;
   LoadTiers;
   LoadArticles;
+  if FKind = bkLivraison then
+    LoadCommandes;
   NewBon;
 end;
 
 destructor TFrmBon.Destroy;
 begin
   FTiersCodes.Free;
+  FCmdCodes.Free;
   FArtCodes.Free;
   inherited;
 end;
@@ -205,6 +212,15 @@ begin
 
   lblStock := AddLabel('', 16, 122);
 
+  if IsLiv then
+  begin
+    AddLabel('Commande liée (facultatif) :', 300, 126);
+    cboCmd := TComboBox.Create(Self);
+    cboCmd.Parent := Self;
+    cboCmd.Style := csDropDownList;
+    cboCmd.SetBounds(450, 121, 284, 21);
+  end;
+
   { Lignes du bon }
   grdLines := TStringGrid.Create(Self);
   grdLines.Parent := Self;
@@ -275,6 +291,35 @@ begin
       Txt := Trim(Txt + ' ' + FQry.FieldByName('Prenom').AsString);
     cboTiers.Items.Add(Txt);
     FTiersCodes.Add(FQry.FieldByName('Code').AsString);
+    FQry.Next;
+  end;
+  FQry.Close;
+end;
+
+{ Commandes non annulées proposées au rattachement d'une livraison. }
+procedure TFrmBon.LoadCommandes;
+var
+  Txt: string;
+begin
+  cboCmd.Items.Clear;
+  FCmdCodes.Clear;
+  cboCmd.Items.Add('(aucune)');
+  FCmdCodes.Add('');
+  FQry.Close;
+  FQry.SQL.Text :=
+    'SELECT b.Code_BC, b.Date_BC, s.Nom_serv FROM BON_DE_COMMANDE AS b ' +
+    'LEFT JOIN SERVICE_NAFTAL AS s ON b.Code_serv = s.Code_serv ' +
+    'WHERE b.Annule IS NULL OR b.Annule = False ' +
+    'ORDER BY b.Date_BC DESC, b.Code_BC DESC';
+  FQry.Open;
+  while not FQry.Eof do
+  begin
+    Txt := FQry.Fields[0].AsString;
+    if not FQry.Fields[1].IsNull then
+      Txt := Txt + ' du ' + FormatDateTime('dd/mm/yyyy', FQry.Fields[1].AsDateTime);
+    Txt := Txt + ' - ' + FQry.Fields[2].AsString;
+    cboCmd.Items.Add(Txt);
+    FCmdCodes.Add(FQry.Fields[0].AsString);
     FQry.Next;
   end;
   FQry.Close;
@@ -358,6 +403,8 @@ begin
   dtpDate.Date := Date;
   cboTiers.ItemIndex := -1;
   cboArticle.ItemIndex := -1;
+  if Assigned(cboCmd) and (cboCmd.Items.Count > 0) then
+    cboCmd.ItemIndex := 0;
   edtQty.Text := '';
   if Assigned(edtPrix) then
     edtPrix.Text := '';
@@ -502,12 +549,17 @@ var
 begin
   FQry.Close;
   FQry.SQL.Text :=
-    'INSERT INTO BON_DE_LIVRAISON (Code_Bliv, Date_liv, Code_fourn) ' +
-    'VALUES (:c, :d, :f)';
+    'INSERT INTO BON_DE_LIVRAISON (Code_Bliv, Date_liv, Code_fourn, Code_BC) ' +
+    'VALUES (:c, :d, :f, :bc)';
   FQry.Parameters.ParamByName('c').Value := ACode;
   FQry.Parameters.ParamByName('d').DataType := ftDateTime;
   FQry.Parameters.ParamByName('d').Value := DateOf(dtpDate.Date);
   FQry.Parameters.ParamByName('f').Value := FTiersCodes[cboTiers.ItemIndex];
+  FQry.Parameters.ParamByName('bc').DataType := ftString;
+  if (cboCmd.ItemIndex <= 0) or (FCmdCodes[cboCmd.ItemIndex] = '') then
+    FQry.Parameters.ParamByName('bc').Value := Null
+  else
+    FQry.Parameters.ParamByName('bc').Value := FCmdCodes[cboCmd.ItemIndex];
   FQry.ExecSQL;
 
   for R := 1 to FLineCount do

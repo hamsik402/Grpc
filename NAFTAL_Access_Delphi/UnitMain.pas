@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult, UnitStock, UnitMouv;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult, UnitStock, UnitMouv, UnitRappro;
 
 type
   TFrmMain = class(TForm)
@@ -26,6 +26,7 @@ type
     btnConsCmd: TButton;
     btnStock: TButton;
     btnMouv: TButton;
+    btnRappro: TButton;
     lblAlert: TLabel;
     edtCode: TEdit;
     edtDesignation: TEdit;
@@ -53,6 +54,7 @@ type
     procedure btnConsCmdClick(Sender: TObject);
     procedure btnStockClick(Sender: TObject);
     procedure btnMouvClick(Sender: TObject);
+    procedure btnRapproClick(Sender: TObject);
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
@@ -298,6 +300,13 @@ begin
   if not ADOConnection1.Connected then
     raise Exception.Create('Base de données non connectée.');
   OpenMouvements(ADOConnection1, Trim(edtCode.Text));
+end;
+
+procedure TFrmMain.btnRapproClick(Sender: TObject);
+begin
+  if not ADOConnection1.Connected then
+    raise Exception.Create('Base de données non connectée.');
+  OpenRappro(ADOConnection1);
 end;
 
 end.

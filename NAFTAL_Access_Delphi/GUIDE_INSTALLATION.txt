@@ -6,7 +6,7 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 - Delphi VCL avec les composants ADO (Data.Win.ADODB)
 
 2. CRÉER LA BASE ACCESS
-(Base déjà créée avec une ancienne version du schéma ? Exécuter 03_migration_annulation.sql.)
+(Base déjà créée avec une ancienne version du schéma ? Exécuter 03_migration_annulation.sql puis 04_migration_rapprochement.sql.)
 - Ouvrir Access > Base de données vide.
 - Nommer le fichier StockNaftal.accdb.
 - Placer StockNaftal.accdb dans le même dossier que l'exécutable Delphi.
@@ -61,10 +61,17 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
   impression. Les bons annulés apparaissent en gris sans compter dans le solde. Les changements
   faits par « Entrée stock » / « Sortie stock » de l'écran principal, ou le stock de départ, n'ont
   pas de bon : ils sont regroupés sur la ligne « Stock initial / ajustements hors bons ».
+- Rapprochement commande / livraison : dans un bon de livraison, le champ « Commande liée »
+  (facultatif) rattache la livraison à un bon de commande. Le bouton « Rapprochement » compare,
+  pour chaque commande non annulée et par article, la quantité commandée à la quantité reçue
+  (somme des livraisons liées non annulées) : Non livrée / Partielle / Complète / Complète
+  (excédent). Les articles reçus mais absents de la commande sont signalés « Hors commande ».
+  Base existante : exécuter 04_migration_rapprochement.sql. Les livraisons déjà saisies n'ont
+  pas de commande liée ; le lien ne peut pas être ajouté après coup depuis l'application.
 - 02_donnees_test.sql (facultatif) : fournisseurs et services d'essai fictifs.
 
 LIMITES DE CETTE VERSION
 C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
-mais le rapprochement commande/livraison, la modification d'un bon, journal d'audit, comptes
+mais la modification d'un bon, journal d'audit, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

@@ -235,6 +235,15 @@ object FrmMain: TFrmMain
       TabOrder = 17
       OnClick = btnMouvClick
     end
+    object btnRappro: TButton
+      Left = 304
+      Top = 180
+      Width = 130
+      Height = 28
+      Caption = 'Rapprochement'
+      TabOrder = 18
+      OnClick = btnRapproClick
+    end
   end
   object grdArticles: TStringGrid
     Left = 0

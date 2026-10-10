@@ -41,6 +41,7 @@ type
     procedure GridBonsDrawCell(Sender: TObject; ACol, ARow: Integer;
       Rect: TRect; State: TGridDrawState);
     procedure CancelClick(Sender: TObject);
+    procedure CorrectClick(Sender: TObject);
     procedure CancelBon(const ACode, AMotif: string);
     procedure PrintClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
@@ -194,6 +195,7 @@ begin
   lblCancel.Caption := '';
 
   AddButton('Annuler le bon', 16, 544, 140, CancelClick);
+  AddButton('Corriger le bon', 166, 544, 140, CorrectClick);
   AddButton('Imprimer le bon', 480, 544, 140, PrintClick);
   AddButton('Fermer', 634, 544, 100, CloseClick);
 end;
@@ -293,7 +295,8 @@ begin
 
   if (ARow >= 1) and (ARow <= FBonCount) then
   begin
-    FHeadCancel := FCancelInfo[ARow - 1];
+    if ARow - 1 < FCancelInfo.Count then
+      FHeadCancel := FCancelInfo[ARow - 1];
     FHeadCode := grdBons.Cells[0, ARow];
     FHeadDate := grdBons.Cells[1, ARow];
     FHeadTiers := grdBons.Cells[2, ARow];
@@ -470,6 +473,16 @@ begin
       FConn.RollbackTrans;
     raise;
   end;
+end;
+
+procedure TFrmConsult.CorrectClick(Sender: TObject);
+begin
+  if FHeadCode = '' then
+    raise Exception.Create('Sélectionnez un bon à corriger.');
+  if FHeadCancel <> '' then
+    raise Exception.Create('Un bon annulé ne peut pas être corrigé.');
+  OpenBon(FConn, FKind, FHeadCode);
+  LoadBons;
 end;
 
 procedure TFrmConsult.CancelClick(Sender: TObject);

@@ -1,0 +1,59 @@
+PLAN D'ESSAI - NAFTAL ACCESS + DELPHI
+=====================================
+Le code a été écrit sans pouvoir être compilé (pas de Delphi dans l'environnement de
+développement). Cet essai sert donc aussi de première compilation. Notez pour chaque étape :
+OK / erreur (message exact). Une erreur de compilation Delphi (ligne + message) suffit pour que
+je corrige.
+
+0. PRÉPARATION
+   a. Créer StockNaftal.accdb vide (voir GUIDE_INSTALLATION.txt, section 2).
+   b. Exécuter 01_schema_access.sql, une instruction à la fois (9 tables).
+      (Base déjà créée avec une ancienne version : exécuter 03_ puis 04_migration_*.sql.)
+   c. Ouvrir StockNaftal.dpr dans Delphi, Projet > Compiler. Corriger/me signaler les erreurs.
+   d. Lancer : l'écran principal s'ouvre sans message d'erreur de connexion.
+      Si "Connexion impossible" : fournisseur ACE 12.0/16.0 ou 32/64 bits (voir guide).
+
+1. DONNÉES DE BASE
+   1.1 Fournisseurs : ajouter F001 "Fournisseur Test", puis modifier son téléphone, enregistrer.
+   1.2 Services : ajouter S001 "Informatique" et S002 "Comptabilité".
+   1.3 Articles (écran principal) : ajouter A001 "Cartouche", A002 "Papier A4".
+       Attendu : stock 0, seuil 5, message rouge d'alerte en haut (articles en rupture).
+   1.4 Essayer de supprimer F001 plus tard (étape 3) : doit être refusé car utilisé.
+
+2. COMMANDE
+   2.1 Bon de commande : service S001, A001 x10, A002 x20. Attendu : numéro BC-AAAA-0001,
+       stock inchangé.
+   2.2 Liste des commandes : le bon apparaît, lignes visibles, impression OK (PDF).
+
+3. LIVRAISON ET RAPPROCHEMENT
+   3.1 Bon de livraison : F001, commande liée BC-...-0001, A001 x6 à 1500, A002 x20 à 400.
+       Attendu : BL-AAAA-0001, stock A001 = 6, A002 = 20.
+   3.2 Rapprochement : commande "Partielle" (A001 reste 4, A002 complet).
+   3.3 Deuxième livraison A001 x4 -> rapprochement "Complète".
+   3.4 Troisième livraison A001 x1 liée -> "Complète (excédent)".
+
+4. AFFECTATION
+   4.1 Bon d'affectation : S001, A001 x3. Attendu : stock A001 diminue de 3.
+   4.2 Tenter A001 x1000 : refus "Stock insuffisant" avant et à l'enregistrement.
+   4.3 Écran État du stock : A001 sous le seuil (orange) quand stock <= 5 ; rupture (rouge) à 0 ;
+       modifier le seuil d'un article ; filtre "alertes seulement" ; impression.
+
+5. MOUVEMENTS
+   5.1 Mouvements article A001 : entrées, sorties, solde cumulé = stock actuel.
+   5.2 Imprimer.
+
+6. ANNULATION ET CORRECTION
+   6.1 Annuler un bon d'affectation (motif obligatoire) : stock rétabli, bon grisé "Annulé",
+       impression avec mention BON ANNULÉ.
+   6.2 Annuler une livraison dont les articles ont été sortis : doit être REFUSÉ (stock
+       insuffisant) et rien ne change.
+   6.3 Corriger un bon d'affectation (changer une quantité) : ancien bon "Annulé - Corrigé",
+       nouveau bon créé, stock = différence uniquement.
+   6.4 Corriger une livraison (changer un prix) : stock inchangé, nouveau bon, rapprochement
+       toujours cohérent.
+   6.5 Corriger une commande liée à des livraisons : le rapprochement suit le nouveau numéro.
+
+7. À SIGNALER
+   - Toute erreur Delphi/ADO (copier le message complet).
+   - Tout affichage tronqué ou mal aligné (taille d'écran, DPI).
+   - Tout intitulé à adapter au vocabulaire NAFTAL (en-têtes d'impression, signatures).

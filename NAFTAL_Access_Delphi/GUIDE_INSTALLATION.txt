@@ -48,6 +48,12 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
   Sélectionner un bon dans la liste du haut pour voir ses lignes, puis « Imprimer le bon »
   (choix de l'imprimante ; une imprimante PDF permet d'obtenir un fichier). Un bon enregistré
   ne peut pas être modifié depuis l'application, mais il peut être annulé (voir ci-dessous).
+- Correction : dans la liste, sélectionner le bon puis « Corriger le bon ». La fiche s'ouvre avec
+  le contenu du bon ; modifier la date, le fournisseur/service, la commande liée ou les lignes,
+  puis « Enregistrer la correction ». L'ancien bon est conservé, marqué « Annulé - Corrigé :
+  remplacé par ... », et un nouveau bon (nouveau numéro) est créé. Le stock reçoit seulement la
+  différence ; la correction d'une livraison est refusée si le stock deviendrait négatif. Une
+  commande corrigée reprend ses livraisons rattachées.
 - Annulation : dans la liste, sélectionner le bon puis « Annuler le bon » ; un motif est demandé.
   Le bon reste dans la liste, marqué « Annulé » (et imprimé avec la mention « BON ANNULÉ »).
   Livraison annulée : le stock est diminué des quantités reçues ; l'annulation est refusée si le
@@ -74,6 +80,6 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 
 LIMITES DE CETTE VERSION
 C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
-mais la modification d'un bon, journal d'audit, comptes
+mais journal d'audit, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

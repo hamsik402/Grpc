@@ -1,32 +1,26 @@
 APPLICATION DE GESTION DE STOCK - NAFTAL BOUIRA
 Technologies : Microsoft Access (.accdb) + Delphi (VCL) + ADO
 
-CONTENU
-- 01_schema_access.sql : structure des tables Access (à exécuter/créer dans Access)
-- StockNaftal.dpr : projet Delphi
-- UnitMain.pas : interface Delphi et opérations principales via ADO
-- UnitMain.dfm : formulaire principal
-- GUIDE_INSTALLATION.txt : étapes de configuration
+FICHIERS
+- 01_schema_access.sql        structure des tables (à créer dans Access)
+- 02_donnees_test.sql         données d'essai fictives (facultatif)
+- 03_migration_annulation.sql / 04_migration_rapprochement.sql
+                              uniquement pour une base créée avec une ancienne version
+- StockNaftal.dpr             projet Delphi
+- UnitMain      écran principal : articles, alerte de seuil, accès aux modules
+- UnitBon       saisie et correction des bons de livraison, d'affectation et de commande
+- UnitConsult   consultation, impression, annulation et correction des bons
+- UnitTiers     fournisseurs et services
+- UnitStock     état du stock, seuils d'alerte, impression
+- UnitMouv      mouvements d'un article (entrées, sorties, solde)
+- UnitRappro    rapprochement commande / livraison
+- GUIDE_INSTALLATION.txt      installation et utilisation
+- PLAN_ESSAI.txt              scénario d'essai pas à pas
 
-IMPORTANT
-Ce paquet contient le code source de départ. Il ne contient pas un fichier .accdb déjà créé,
-car la création d'un fichier Access natif requiert Microsoft Access ou le moteur ACE installé.
-Créez une base vide StockNaftal.accdb, puis créez les tables avec les requêtes SQL fournies
-(une requête CREATE TABLE à la fois dans Access > Créer > Création de requête > Mode SQL).
-Les types et contraintes peuvent nécessiter de légères adaptations selon la version d'Access.
+PRINCIPES
+- Le stock ne change que par un bon de livraison (entrée) ou d'affectation (sortie).
+- Chaque enregistrement (bon + lignes + stock) est une transaction : tout ou rien.
+- Un bon n'est jamais supprimé : il est annulé (motif) ou remplacé (correction).
+- Les données d'essai ne sont pas des données réelles NAFTAL.
 
-Configuration Delphi :
-- Delphi avec composants VCL et ADO installés.
-- Le projet utilise TADOConnection et TADOQuery.
-- Modifier le chemin de StockNaftal.accdb dans UnitMain.pas si nécessaire.
-- Fournisseur ACE conseillé : Microsoft.ACE.OLEDB.12.0 ou 16.0.
-- La bitness de Delphi (32/64 bits) doit correspondre à celle du fournisseur ACE installé.
-
-Fonctions de cette première base :
-- afficher les articles
-- ajouter un article
-- (version initiale : entrées/sorties directes, retirées au profit des bons de livraison et d'affectation)
-- afficher le stock actualisé
-
-Les bons détaillés, fournisseurs, services, impressions et authentification pourront être ajoutés
-dans les prochaines versions à partir de ce socle. Les données d'essai ne sont pas des données réelles NAFTAL.
+Ce code n'a pas été compilé dans l'environnement de développement : voir PLAN_ESSAI.txt.

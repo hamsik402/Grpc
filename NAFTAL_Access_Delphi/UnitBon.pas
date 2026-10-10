@@ -4,7 +4,13 @@
   bons d'affectation (sortie de stock, magasin -> service).
   Une seule fiche sert aux deux types de bon ; elle est construite en code.
   L'enregistrement d'un bon (en-tête + lignes + mise à jour du stock) se fait
-  dans une seule transaction : tout est enregistré, ou rien. }
+  dans une seule transaction : tout est enregistré, ou rien.
+
+  Correction d'un bon (AEditCode renseigné) : le bon d'origine est marqué
+  « Annulé » (motif : remplacé par le nouveau numéro) et un nouveau bon est
+  créé avec les données corrigées, dans la même transaction. Le stock reçoit
+  la différence entre l'ancien et le nouveau bon. Une commande corrigée
+  reprend les livraisons qui lui étaient rattachées. }
 
 interface
 
@@ -26,6 +32,9 @@ type
     FArtCodes: TStringList;
     FArtStock: array of Integer;
     FLineCount: Integer;
+    FEditCode: string;        { bon corrigé ; '' = nouveau bon }
+    FOldCodes: TStringList;   { lignes du bon corrigé (articles) }
+    FOldQtys: array of Integer;
 
     edtCode: TEdit;
     dtpDate: TDateTimePicker;
@@ -53,6 +62,12 @@ type
     procedure LoadArticles;
     function NextCode: string;
     procedure NewBon;
+    procedure BonTable(out ATbl, AFld: string);
+    procedure LoadForEdit(const ACode: string);
+    function OldQtyOf(const ACode: string): Integer;
+    procedure MarkOldReplaced(const ANewCode: string);
+    procedure ReverseOld;
+    procedure RepointLivraisons(const ANewCode: string);
 
     function ParseQty(const S: string): Integer;
     function ParsePrix(const S: string): Currency;
@@ -72,19 +87,21 @@ type
     procedure ExecCommande(const ACode: string);
   public
     constructor CreateBon(AOwner: TComponent; AConn: TADOConnection;
-      AKind: TBonKind);
+      AKind: TBonKind; const AEditCode: string = '');
     destructor Destroy; override;
   end;
 
-procedure OpenBon(AConn: TADOConnection; AKind: TBonKind);
+procedure OpenBon(AConn: TADOConnection; AKind: TBonKind;
+  const AEditCode: string = '');
 
 implementation
 
-procedure OpenBon(AConn: TADOConnection; AKind: TBonKind);
+procedure OpenBon(AConn: TADOConnection; AKind: TBonKind;
+  const AEditCode: string);
 var
   F: TFrmBon;
 begin
-  F := TFrmBon.CreateBon(Application, AConn, AKind);
+  F := TFrmBon.CreateBon(Application, AConn, AKind, AEditCode);
   try
     F.ShowModal;
   finally
@@ -95,13 +112,14 @@ end;
 { TFrmBon }
 
 constructor TFrmBon.CreateBon(AOwner: TComponent; AConn: TADOConnection;
-  AKind: TBonKind);
+  AKind: TBonKind; const AEditCode: string);
 begin
   inherited CreateNew(AOwner);
   FConn := AConn;
   FKind := AKind;
   FTiersCodes := TStringList.Create;
   FCmdCodes := TStringList.Create;
+  FOldCodes := TStringList.Create;
   FArtCodes := TStringList.Create;
   FQry := TADOQuery.Create(Self);
   FQry.Connection := FConn;
@@ -112,12 +130,15 @@ begin
   if FKind = bkLivraison then
     LoadCommandes;
   NewBon;
+  if AEditCode <> '' then
+    LoadForEdit(AEditCode);
 end;
 
 destructor TFrmBon.Destroy;
 begin
   FTiersCodes.Free;
   FCmdCodes.Free;
+  FOldCodes.Free;
   FArtCodes.Free;
   inherited;
 end;
@@ -395,6 +416,205 @@ begin
   Result := Prefix + Format('%.4d', [MaxN + 1]);
 end;
 
+procedure TFrmBon.BonTable(out ATbl, AFld: string);
+begin
+  case FKind of
+    bkLivraison:
+      begin
+        ATbl := 'BON_DE_LIVRAISON';
+        AFld := 'Code_Bliv';
+      end;
+    bkAffectation:
+      begin
+        ATbl := 'BON_D_AFFECTATION';
+        AFld := 'Code_Aff';
+      end;
+  else
+    begin
+      ATbl := 'BON_DE_COMMANDE';
+      AFld := 'Code_BC';
+    end;
+  end;
+end;
+
+function TFrmBon.OldQtyOf(const ACode: string): Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to FOldCodes.Count - 1 do
+    if SameText(FOldCodes[I], ACode) then
+      Inc(Result, FOldQtys[I]);
+end;
+
+{ Charge dans la fiche le bon à corriger (en-tête et lignes). }
+procedure TFrmBon.LoadForEdit(const ACode: string);
+var
+  Tbl, Fld, LinesTbl, QtyFld, TiersFld, DateFld, Extra, SQLLines: string;
+  Idx, R, N: Integer;
+  Q: Integer;
+begin
+  BonTable(Tbl, Fld);
+  case FKind of
+    bkLivraison:
+      begin
+        DateFld := 'Date_liv';
+        TiersFld := 'Code_fourn';
+        LinesTbl := 'CONTIENT_LIVRAISON';
+        QtyFld := 'Qtt_liv';
+      end;
+    bkAffectation:
+      begin
+        DateFld := 'Date_Aff';
+        TiersFld := 'Code_serv';
+        LinesTbl := 'CONTIENT_AFFECTATION';
+        QtyFld := 'Qtt_aff';
+      end;
+  else
+    begin
+      DateFld := 'Date_BC';
+      TiersFld := 'Code_serv';
+      LinesTbl := 'COMMANDER';
+      QtyFld := 'Qtt_cm';
+    end;
+  end;
+  Extra := '';
+  if FKind = bkLivraison then
+    Extra := ', Code_BC AS Cmd';
+
+  FQry.Close;
+  FQry.SQL.Text := 'SELECT ' + DateFld + ' AS Dt, ' + TiersFld + ' AS Tiers, ' +
+    'Annule' + Extra + ' FROM ' + Tbl + ' WHERE ' + Fld + ' = :c';
+  FQry.Parameters.ParamByName('c').Value := ACode;
+  FQry.Open;
+  try
+    if FQry.Eof then
+      raise Exception.Create('Bon introuvable : ' + ACode);
+    if FQry.FieldByName('Annule').AsBoolean then
+      raise Exception.Create('Un bon annulé ne peut pas être corrigé.');
+    if not FQry.FieldByName('Dt').IsNull then
+      dtpDate.Date := FQry.FieldByName('Dt').AsDateTime;
+    cboTiers.ItemIndex := FTiersCodes.IndexOf(FQry.FieldByName('Tiers').AsString);
+    if FKind = bkLivraison then
+    begin
+      Idx := FCmdCodes.IndexOf(FQry.FieldByName('Cmd').AsString);
+      if Idx < 0 then
+        Idx := 0;
+      cboCmd.ItemIndex := Idx;
+    end;
+  finally
+    FQry.Close;
+  end;
+
+  SQLLines := 'SELECT c.Code_art, a.Designation, c.' + QtyFld + ' AS Qtt';
+  if FKind = bkLivraison then
+    SQLLines := SQLLines + ', c.Prix';
+  SQLLines := SQLLines + ' FROM ' + LinesTbl + ' AS c LEFT JOIN ARTICLE AS a ' +
+    'ON c.Code_art = a.Code_art WHERE c.' + Fld + ' = :c ORDER BY c.Code_art';
+  FQry.SQL.Text := SQLLines;
+  FQry.Parameters.ParamByName('c').Value := ACode;
+  FQry.Open;
+  FOldCodes.Clear;
+  SetLength(FOldQtys, 0);
+  R := 0;
+  while not FQry.Eof do
+  begin
+    Inc(R);
+    if grdLines.RowCount < R + 1 then
+      grdLines.RowCount := R + 1;
+    Q := FQry.FieldByName('Qtt').AsInteger;
+    grdLines.Cells[0, R] := FQry.FieldByName('Code_art').AsString;
+    grdLines.Cells[1, R] := FQry.FieldByName('Designation').AsString;
+    grdLines.Cells[2, R] := IntToStr(Q);
+    if FKind = bkLivraison then
+      grdLines.Cells[3, R] := CurrToStr(FQry.FieldByName('Prix').AsCurrency);
+    FOldCodes.Add(FQry.FieldByName('Code_art').AsString);
+    N := Length(FOldQtys);
+    SetLength(FOldQtys, N + 1);
+    FOldQtys[N] := Q;
+    FQry.Next;
+  end;
+  FQry.Close;
+  FLineCount := R;
+  if FLineCount > 0 then
+    grdLines.RowCount := FLineCount + 1;
+
+  FEditCode := ACode;
+  Caption := Caption + ' - correction du bon ' + ACode;
+  btnSave.Caption := 'Enregistrer la correction';
+  UpdateTotal;
+end;
+
+{ Marque le bon d'origine comme annulé, remplacé par le nouveau. }
+procedure TFrmBon.MarkOldReplaced(const ANewCode: string);
+var
+  Tbl, Fld: string;
+begin
+  BonTable(Tbl, Fld);
+  FQry.Close;
+  FQry.SQL.Text := 'UPDATE ' + Tbl +
+    ' SET Annule = :a, Date_annul = :d, Motif_annul = :m' +
+    ' WHERE ' + Fld + ' = :c AND (Annule IS NULL OR Annule = False)';
+  FQry.Parameters.ParamByName('a').DataType := ftBoolean;
+  FQry.Parameters.ParamByName('a').Value := True;
+  FQry.Parameters.ParamByName('d').DataType := ftDateTime;
+  FQry.Parameters.ParamByName('d').Value := Now;
+  FQry.Parameters.ParamByName('m').Value := 'Corrigé : remplacé par ' + ANewCode;
+  FQry.Parameters.ParamByName('c').Value := FEditCode;
+  FQry.ExecSQL;
+  if FQry.RowsAffected = 0 then
+    raise Exception.Create('Le bon à corriger a été annulé ou modifié entre-temps.');
+end;
+
+{ Retire du stock l'effet du bon remplacé (livraison : on retire ce qui était
+  entré ; affectation : on rend ce qui était sorti). }
+procedure TFrmBon.ReverseOld;
+var
+  I: Integer;
+begin
+  if FKind = bkCommande then
+    Exit;
+  for I := 0 to FOldCodes.Count - 1 do
+  begin
+    FQry.Close;
+    if FKind = bkLivraison then
+    begin
+      FQry.SQL.Text :=
+        'UPDATE ARTICLE SET Qtt_stock = Qtt_stock - :q ' +
+        'WHERE Code_art = :c AND Qtt_stock >= :q2';
+      FQry.Parameters.ParamByName('q').Value := FOldQtys[I];
+      FQry.Parameters.ParamByName('c').Value := FOldCodes[I];
+      FQry.Parameters.ParamByName('q2').Value := FOldQtys[I];
+      FQry.ExecSQL;
+      if FQry.RowsAffected = 0 then
+        raise Exception.CreateFmt(
+          'Correction impossible : le stock de l''article %s deviendrait négatif ' +
+          '(des articles de ce bon ont déjà été sortis).', [FOldCodes[I]]);
+    end
+    else
+    begin
+      FQry.SQL.Text :=
+        'UPDATE ARTICLE SET Qtt_stock = ' +
+        'IIf(Qtt_stock IS NULL, 0, Qtt_stock) + :q WHERE Code_art = :c';
+      FQry.Parameters.ParamByName('q').Value := FOldQtys[I];
+      FQry.Parameters.ParamByName('c').Value := FOldCodes[I];
+      FQry.ExecSQL;
+      if FQry.RowsAffected = 0 then
+        raise Exception.Create('Article introuvable : ' + FOldCodes[I]);
+    end;
+  end;
+end;
+
+{ Commande corrigée : les livraisons déjà rattachées suivent le nouveau bon. }
+procedure TFrmBon.RepointLivraisons(const ANewCode: string);
+begin
+  FQry.Close;
+  FQry.SQL.Text := 'UPDATE BON_DE_LIVRAISON SET Code_BC = :n WHERE Code_BC = :o';
+  FQry.Parameters.ParamByName('n').Value := ANewCode;
+  FQry.Parameters.ParamByName('o').Value := FEditCode;
+  FQry.ExecSQL;
+end;
+
 procedure TFrmBon.NewBon;
 var
   R: Integer;
@@ -498,8 +718,10 @@ begin
     if SameText(grdLines.Cells[0, R], Code) then
       raise Exception.Create('Cet article est déjà dans le bon. ' +
         'Supprimez sa ligne pour la ressaisir.');
-  if (FKind = bkAffectation) and (Q > FArtStock[Idx]) then
-    raise Exception.CreateFmt('Stock insuffisant. Disponible : %d', [FArtStock[Idx]]);
+  { en correction, les quantités du bon remplacé sont rendues au stock }
+  if (FKind = bkAffectation) and (Q > FArtStock[Idx] + OldQtyOf(Code)) then
+    raise Exception.CreateFmt('Stock insuffisant. Disponible : %d',
+      [FArtStock[Idx] + OldQtyOf(Code)]);
 
   Inc(FLineCount);
   if grdLines.RowCount < FLineCount + 1 then
@@ -683,11 +905,27 @@ begin
 
   FConn.BeginTrans;
   try
+    if FEditCode <> '' then
+    begin
+      MarkOldReplaced(Code);
+      { affectation : on rend d'abord l'ancien bon au stock, puis on retire le
+        nouveau ; livraison : l'inverse, pour que la vérification du stock
+        porte sur le solde final. }
+      if FKind = bkAffectation then
+        ReverseOld;
+    end;
     case FKind of
       bkLivraison: ExecLivraison(Code);
       bkAffectation: ExecAffectation(Code);
     else
       ExecCommande(Code);
+    end;
+    if FEditCode <> '' then
+    begin
+      if FKind = bkLivraison then
+        ReverseOld
+      else if FKind = bkCommande then
+        RepointLivraisons(Code);
     end;
     FConn.CommitTrans;
   except
@@ -697,6 +935,13 @@ begin
     raise;
   end;
 
+  if FEditCode <> '' then
+  begin
+    ShowMessage('Bon ' + FEditCode + ' corrigé : il est remplacé par le bon ' +
+      Code + '. L''ancien bon est conservé, marqué « Annulé ».');
+    ModalResult := mrOk;
+    Exit;
+  end;
   if FKind = bkCommande then
     ShowMessage('Bon ' + Code + ' enregistré. Le stock n''est pas modifié.')
   else

@@ -74,13 +74,6 @@ object FrmMain: TFrmMain
       Height = 13
       Caption = 'Type'
     end
-    object lblQty: TLabel
-      Left = 620
-      Top = 14
-      Width = 55
-      Height = 13
-      Caption = 'Quantité'
-    end
     object edtCode: TEdit
       Left = 16
       Top = 34
@@ -102,13 +95,6 @@ object FrmMain: TFrmMain
       Height = 21
       TabOrder = 2
     end
-    object edtQty: TEdit
-      Left = 620
-      Top = 34
-      Width = 100
-      Height = 21
-      TabOrder = 3
-    end
     object btnAdd: TButton
       Left = 16
       Top = 78
@@ -118,26 +104,8 @@ object FrmMain: TFrmMain
       TabOrder = 4
       OnClick = btnAddClick
     end
-    object btnEntry: TButton
-      Left = 160
-      Top = 78
-      Width = 130
-      Height = 28
-      Caption = 'Entrée stock'
-      TabOrder = 5
-      OnClick = btnEntryClick
-    end
-    object btnExit: TButton
-      Left = 304
-      Top = 78
-      Width = 130
-      Height = 28
-      Caption = 'Sortie stock'
-      TabOrder = 6
-      OnClick = btnExitClick
-    end
     object btnRefresh: TButton
-      Left = 448
+      Left = 160
       Top = 78
       Width = 130
       Height = 28

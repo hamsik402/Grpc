@@ -25,8 +25,7 @@ Configuration Delphi :
 Fonctions de cette première base :
 - afficher les articles
 - ajouter un article
-- enregistrer une entrée de stock
-- enregistrer une sortie de stock avec contrôle de quantité disponible
+- (version initiale : entrées/sorties directes, retirées au profit des bons de livraison et d'affectation)
 - afficher le stock actualisé
 
 Les bons détaillés, fournisseurs, services, impressions et authentification pourront être ajoutés

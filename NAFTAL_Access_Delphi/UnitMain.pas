@@ -14,8 +14,6 @@ type
     pnlActions: TPanel;
     btnRefresh: TButton;
     btnAdd: TButton;
-    btnEntry: TButton;
-    btnExit: TButton;
     btnLivraison: TButton;
     btnAffectation: TButton;
     btnFournisseurs: TButton;
@@ -31,19 +29,15 @@ type
     edtCode: TEdit;
     edtDesignation: TEdit;
     edtType: TEdit;
-    edtQty: TEdit;
     lblCode: TLabel;
     lblDesignation: TLabel;
     lblType: TLabel;
-    lblQty: TLabel;
     grdArticles: TStringGrid;
     ADOConnection1: TADOConnection;
     ADOQuery1: TADOQuery;
     procedure FormCreate(Sender: TObject);
     procedure btnRefreshClick(Sender: TObject);
     procedure btnAddClick(Sender: TObject);
-    procedure btnEntryClick(Sender: TObject);
-    procedure btnExitClick(Sender: TObject);
     procedure btnLivraisonClick(Sender: TObject);
     procedure btnAffectationClick(Sender: TObject);
     procedure btnFournisseursClick(Sender: TObject);
@@ -58,7 +52,6 @@ type
   private
     procedure ConnectDatabase;
     procedure LoadArticles;
-    function ReadQty: Integer;
   public
   end;
 
@@ -143,12 +136,6 @@ begin
     lblAlert.Caption := '';
 end;
 
-function TFrmMain.ReadQty: Integer;
-begin
-  if not TryStrToInt(Trim(edtQty.Text), Result) or (Result <= 0) then
-    raise Exception.Create('La quantité doit être un entier supérieur à zéro.');
-end;
-
 procedure TFrmMain.btnRefreshClick(Sender: TObject);
 begin
   LoadArticles;
@@ -173,57 +160,6 @@ begin
   ADOQuery1.ExecSQL;
   LoadArticles;
   ShowMessage('Article ajouté.');
-end;
-
-procedure TFrmMain.btnEntryClick(Sender: TObject);
-var
-  Q: Integer;
-  Code: string;
-begin
-  Q := ReadQty;
-  Code := Trim(edtCode.Text);
-  if Code = '' then raise Exception.Create('Saisissez le code de l''article.');
-  ADOQuery1.Close;
-  ADOQuery1.SQL.Text :=
-    'UPDATE ARTICLE SET Qtt_stock = Qtt_stock + :q WHERE Code_art = :c';
-  ADOQuery1.Parameters.ParamByName('q').Value := Q;
-  ADOQuery1.Parameters.ParamByName('c').Value := Code;
-  ADOQuery1.ExecSQL;
-  if ADOQuery1.RowsAffected = 0 then
-    raise Exception.Create('Code article introuvable.');
-  LoadArticles;
-  ShowMessage('Entrée de stock enregistrée.');
-end;
-
-procedure TFrmMain.btnExitClick(Sender: TObject);
-var
-  Q: Integer;
-  Code: string;
-  CurrentQty: Integer;
-begin
-  Q := ReadQty;
-  Code := Trim(edtCode.Text);
-  if Code = '' then raise Exception.Create('Saisissez le code de l''article.');
-
-  ADOQuery1.Close;
-  ADOQuery1.SQL.Text := 'SELECT Qtt_stock FROM ARTICLE WHERE Code_art = :c';
-  ADOQuery1.Parameters.ParamByName('c').Value := Code;
-  ADOQuery1.Open;
-  if ADOQuery1.Eof then
-    raise Exception.Create('Code article introuvable.');
-  CurrentQty := ADOQuery1.FieldByName('Qtt_stock').AsInteger;
-  ADOQuery1.Close;
-
-  if Q > CurrentQty then
-    raise Exception.CreateFmt('Stock insuffisant. Disponible : %d', [CurrentQty]);
-
-  ADOQuery1.SQL.Text :=
-    'UPDATE ARTICLE SET Qtt_stock = Qtt_stock - :q WHERE Code_art = :c';
-  ADOQuery1.Parameters.ParamByName('q').Value := Q;
-  ADOQuery1.Parameters.ParamByName('c').Value := Code;
-  ADOQuery1.ExecSQL;
-  LoadArticles;
-  ShowMessage('Sortie de stock enregistrée.');
 end;
 
 procedure TFrmMain.btnLivraisonClick(Sender: TObject);

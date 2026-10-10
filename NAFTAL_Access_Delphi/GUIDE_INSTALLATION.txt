@@ -26,8 +26,10 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 
 4. UTILISATION
 - Pour ajouter un article : saisir code, désignation et type puis cliquer Ajouter article.
-- Pour enregistrer une entrée : saisir le code article et une quantité positive puis Entrée stock.
-- Pour enregistrer une sortie : saisir le code article et une quantité positive puis Sortie stock.
+- Le stock ne se modifie plus à la main : toute entrée passe par un bon de livraison, toute
+  sortie par un bon d'affectation (un article est créé avec un stock de 0). Pour reprendre un
+  stock existant, saisir un bon de livraison d'ouverture : créer un fournisseur de reprise
+  (par exemple « STOCK INITIAL ») et y mettre les quantités et prix de l'inventaire de départ.
 - Actualiser recharge la liste.
 - Bon de livraison (entrée de stock) : bouton « Bon de livraison ». Choisir le fournisseur,
   ajouter les lignes (article, quantité, prix unitaire), puis Enregistrer le bon. Le stock de

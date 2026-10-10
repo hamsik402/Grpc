@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult, UnitStock, UnitMouv, UnitRappro;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Grids, Data.DB, Data.Win.ADODB, UnitBon, UnitTiers, UnitConsult, UnitStock, UnitMouv, UnitRappro, UnitSchema;
 
 type
   TFrmMain = class(TForm)
@@ -62,17 +62,37 @@ implementation
 
 {$R *.dfm}
 
+{ Ouvre la base ; la crée au premier lancement et complète les tables ou
+  colonnes manquantes (voir UnitSchema). Essaie ACE 12.0 puis 16.0. }
 procedure TFrmMain.ConnectDatabase;
 var
-  DBPath: string;
+  DBPath, Prov, LastErr: string;
+  Created: Boolean;
 begin
-  DBPath := ExtractFilePath(ParamStr(0)) + 'StockNaftal.accdb';
+  DBPath := EnsureDatabase(Created);
   ADOConnection1.LoginPrompt := False;
-  ADOConnection1.ConnectionString :=
-    'Provider=Microsoft.ACE.OLEDB.12.0;Data Source=' + DBPath +
-    ';Persist Security Info=False;';
-  ADOConnection1.Connected := True;
+  ADOConnection1.Connected := False;
+  LastErr := '';
+  for Prov in ProviderList do
+  begin
+    try
+      ADOConnection1.ConnectionString :=
+        'Provider=' + Prov + ';Data Source=' + DBPath +
+        ';Persist Security Info=False;';
+      ADOConnection1.Connected := True;
+      Break;
+    except
+      on E: Exception do
+        LastErr := E.Message;
+    end;
+  end;
+  if not ADOConnection1.Connected then
+    raise Exception.Create(LastErr);
   ADOQuery1.Connection := ADOConnection1;
+  EnsureSchema(ADOConnection1);
+  if Created then
+    ShowMessage('Première utilisation : la base de données a été créée ici :' +
+      sLineBreak + DBPath);
 end;
 
 procedure TFrmMain.FormCreate(Sender: TObject);

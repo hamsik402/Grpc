@@ -6,12 +6,17 @@ OK / erreur (message exact). Une erreur de compilation Delphi (ligne + message) 
 je corrige.
 
 0. PRÉPARATION
-   a. Créer StockNaftal.accdb vide (voir GUIDE_INSTALLATION.txt, section 2).
-   b. Exécuter 01_schema_access.sql, une instruction à la fois (9 tables).
-      (Base déjà créée avec une ancienne version : exécuter 03_ puis 04_migration_*.sql.)
-   c. Ouvrir StockNaftal.dpr dans Delphi, Projet > Compiler. Corriger/me signaler les erreurs.
-   d. Lancer : l'écran principal s'ouvre sans message d'erreur de connexion.
-      Si "Connexion impossible" : fournisseur ACE 12.0/16.0 ou 32/64 bits (voir guide).
+   a. Rien à préparer côté Access : la base est créée automatiquement au premier lancement
+      (message "Première utilisation : la base de données a été créée ici : ...").
+      Il faut seulement le moteur ACE (Access/Office installé, ou "Microsoft Access Database
+      Engine"), de même architecture 32/64 bits que le programme.
+      Une base d'une ancienne version est complétée automatiquement.
+      (Facultatif : 02_donnees_test.sql pour des fournisseurs et services d'essai.)
+   b. Ouvrir StockNaftal.dpr dans Delphi, Projet > Compiler. Corriger/me signaler les erreurs.
+   c. Lancer : l'écran principal s'ouvre sans message d'erreur de connexion.
+      Si "Connexion impossible" ou "Impossible de créer la base" : moteur ACE absent ou
+      architecture 32/64 bits différente (voir guide, sections 3 et 5).
+   d. Construire l'exécutable (guide, section 5) et le lancer par double-clic depuis son dossier.
 
 1. DONNÉES DE BASE
    1.1 Fournisseurs : ajouter F001 "Fournisseur Test", puis modifier son téléphone, enregistrer.

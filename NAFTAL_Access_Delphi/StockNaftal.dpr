@@ -8,13 +8,15 @@ uses
   UnitConsult in 'UnitConsult.pas',
   UnitStock in 'UnitStock.pas',
   UnitMouv in 'UnitMouv.pas',
-  UnitRappro in 'UnitRappro.pas';
+  UnitRappro in 'UnitRappro.pas',
+  UnitSchema in 'UnitSchema.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  Application.Title := 'Gestion de stock - NAFTAL Bouira';
   Application.CreateForm(TFrmMain, FrmMain);
   Application.Run;
 end.

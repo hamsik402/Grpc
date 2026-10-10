@@ -5,6 +5,7 @@ object FrmMain: TFrmMain
   ClientHeight = 560
   ClientWidth = 940
   Color = clBtnFace
+  Position = poScreenCenter
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11

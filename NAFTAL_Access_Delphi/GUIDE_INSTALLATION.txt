@@ -5,8 +5,12 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 - Microsoft Access (ou Microsoft Access Database Engine/ACE)
 - Delphi VCL avec les composants ADO (Data.Win.ADODB)
 
-2. CRÉER LA BASE ACCESS
-(Base déjà créée avec une ancienne version du schéma ? Exécuter 03_migration_annulation.sql puis 04_migration_rapprochement.sql.)
+2. BASE DE DONNÉES ACCESS (AUTOMATIQUE)
+Rien à faire : au premier lancement, le programme crée StockNaftal.accdb avec toutes les tables,
+à côté de l'exécutable (ou dans %LOCALAPPDATA%\StockNaftal si ce dossier n'est pas modifiable).
+Aux lancements suivants, il ajoute les tables ou colonnes manquantes d'une ancienne base : les
+scripts 03_ et 04_ ne sont plus nécessaires. Le contenu n'est jamais effacé.
+Les étapes ci-dessous ne servent que si vous voulez créer la base à la main (méthode facultative).
 - Ouvrir Access > Base de données vide.
 - Nommer le fichier StockNaftal.accdb.
 - Placer StockNaftal.accdb dans le même dossier que l'exécutable Delphi.
@@ -21,8 +25,7 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
 - Compiler puis exécuter.
 - Si la connexion échoue, vérifier que le fournisseur ACE est installé et compatible avec
   l'architecture 32/64 bits de Delphi.
-- Si votre installation ne prend pas en charge ACE 12.0, remplacer dans UnitMain.pas
-  Microsoft.ACE.OLEDB.12.0 par Microsoft.ACE.OLEDB.16.0.
+- Le programme essaie lui-même ACE 12.0 puis 16.0.
 
 4. UTILISATION
 - Pour ajouter un article : saisir code, désignation et type puis cliquer Ajouter article.
@@ -83,3 +86,25 @@ C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et
 mais journal d'audit, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.
+
+5. CRÉER L'EXÉCUTABLE (.exe) À LANCER PAR DOUBLE-CLIC
+- Dans Delphi : Projet > Options > Compilation, choisir la configuration « Release » et la
+  plateforme « Windows 32 bits » (voir la remarque sur 32/64 bits plus bas).
+- Projet > Options > Packages > Packages d'exécution : décocher « Lier avec les packages
+  d'exécution », pour obtenir un seul fichier .exe autonome.
+- Facultatif : Projet > Options > Application, pour choisir une icône et les informations de version.
+- Projet > Construire StockNaftal. Le fichier StockNaftal.exe est créé dans le sous-dossier
+  Win32\Release du dossier du projet.
+- Lancement : double-clic sur StockNaftal.exe (aucune commande). Pour un raccourci sur le Bureau :
+  clic droit sur le .exe > Envoyer vers > Bureau.
+- Sauvegarde des données : copier le fichier StockNaftal.accdb (à faire régulièrement).
+
+Installer sur un autre ordinateur Windows
+- Copier StockNaftal.exe dans un dossier où l'utilisateur peut écrire (par exemple C:\StockNaftal ;
+  éviter C:\Program Files). Le programme crée alors sa base à côté.
+- Installer « Microsoft Access Database Engine » (redistribuable gratuit de Microsoft) si Microsoft
+  Access/Office n'est pas installé. 32/64 bits : l'exe et le moteur ACE doivent avoir la même
+  architecture. Office 32 bits ou ACE 32 bits -> compiler en Windows 32 bits ; Office 64 bits ->
+  compiler en Windows 64 bits (plateforme à ajouter dans le gestionnaire de projet de Delphi).
+- Windows SmartScreen peut avertir pour un programme non signé : « Informations complémentaires »
+  puis « Exécuter quand même ».

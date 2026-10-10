@@ -11,7 +11,7 @@ interface
 uses
   Winapi.Windows, System.SysUtils, System.Classes, System.Types,
   Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.Grids, Vcl.Dialogs, Vcl.Printers,
-  Vcl.Graphics, Data.DB, Data.Win.ADODB;
+  Vcl.Graphics, Data.DB, Data.Win.ADODB, UnitMouv;
 
 type
   TStockItem = record
@@ -51,6 +51,7 @@ type
     procedure GridDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect;
       State: TGridDrawState);
     procedure SeuilClick(Sender: TObject);
+    procedure MouvClick(Sender: TObject);
     procedure PrintClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
   public
@@ -171,6 +172,7 @@ begin
   edtSeuil.SetBounds(250, 508, 70, 21);
   AddButton('Modifier le seuil', 332, 504, 130, SeuilClick);
 
+  AddButton('Mouvements de l''article', 380, 540, 170, MouvClick);
   AddButton('Imprimer', 560, 540, 110, PrintClick);
   AddButton('Fermer', 684, 540, 100, CloseClick);
 end;
@@ -335,6 +337,13 @@ begin
   FQry.ExecSQL;
   LoadItems;
   ApplyFilter(Code);
+end;
+
+procedure TFrmStock.MouvClick(Sender: TObject);
+begin
+  if SelectedCode = '' then
+    raise Exception.Create('Sélectionnez un article dans la liste.');
+  OpenMouvements(FConn, SelectedCode);
 end;
 
 procedure TFrmStock.CloseClick(Sender: TObject);

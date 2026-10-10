@@ -55,10 +55,16 @@ GUIDE D'INSTALLATION - NAFTAL ACCESS + DELPHI
   seuil » (quantité <= seuil d'alerte, en orange), « Rupture » (quantité <= 0, en rouge) ou « OK ».
   Recherche par code/désignation, case « alertes seulement », modification du seuil d'un article
   et impression. L'écran principal affiche en rouge le nombre d'articles en alerte.
+- Mouvements d'un article : bouton « Mouvements article » (l'article dont le code est saisi dans
+  le champ Code est présélectionné) ou « Mouvements de l'article » dans l'état du stock. Liste
+  chronologique des livraisons (entrées) et affectations (sorties) avec le solde cumulé, et
+  impression. Les bons annulés apparaissent en gris sans compter dans le solde. Les changements
+  faits par « Entrée stock » / « Sortie stock » de l'écran principal, ou le stock de départ, n'ont
+  pas de bon : ils sont regroupés sur la ligne « Stock initial / ajustements hors bons ».
 - 02_donnees_test.sql (facultatif) : fournisseurs et services d'essai fictifs.
 
 LIMITES DE CETTE VERSION
 C'est un prototype de départ Access/Delphi. Il gère le catalogue d'articles et les quantités,
-mais le rapprochement commande/livraison, la modification d'un bon, journal d'audit, mouvements de stock par article, comptes
+mais le rapprochement commande/livraison, la modification d'un bon, journal d'audit, comptes
 utilisateurs et tests en environnement Windows restent à compléter. N'utilisez pas ce prototype
 comme système de production sans validation et tests. Les données réelles de NAFTAL ne sont pas incluses.

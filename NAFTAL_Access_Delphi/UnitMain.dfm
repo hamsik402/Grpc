@@ -226,6 +226,15 @@ object FrmMain: TFrmMain
       TabOrder = 16
       OnClick = btnStockClick
     end
+    object btnMouv: TButton
+      Left = 160
+      Top = 180
+      Width = 130
+      Height = 28
+      Caption = 'Mouvements article'
+      TabOrder = 17
+      OnClick = btnMouvClick
+    end
   end
   object grdArticles: TStringGrid
     Left = 0
